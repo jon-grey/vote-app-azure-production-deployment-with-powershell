@@ -1,0 +1,3 @@
+[submodule "builds/vote-app"]
+	path = builds/vote-app
+	url = https://github.com/jon-grey/vote-app-docker-compose-build-push-to-azure-container-registry

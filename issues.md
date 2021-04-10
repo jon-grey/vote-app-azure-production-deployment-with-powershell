@@ -1,5 +1,7 @@
+# Public IP and AppGW
 
-
+1. Public IP Basic Tier with Dynamic IP + App GW Standard (Small)
+2. Public IP Standard Tier with Static IP + App Gw Standard_v2 (Small)
 
 # Put App GW Subnet in Security Group
 
