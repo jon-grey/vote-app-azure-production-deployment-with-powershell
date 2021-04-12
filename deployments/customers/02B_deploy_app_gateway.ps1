@@ -287,10 +287,11 @@ $AppGwIdentity = New-AzApplicationGatewayIdentity -UserAssignedIdentityId $Ident
 echo '
 # ===============================================================================
 # Create App Gw Sku
+# NOTE: do not specify capacity when using autoscaling
 # ==============================================================================='
 
 
-$Sku = New-AzApplicationGatewaySku -Name $APP_GW_SKU_NAME -Tier $APP_GW_SKU_TIER -Capacity ${APP_GW_SKU_CAP}
+$Sku = New-AzApplicationGatewaySku -Name $APP_GW_SKU_NAME -Tier $APP_GW_SKU_TIER # -Capacity 1
 
 echo '
 # ===============================================================================
@@ -317,9 +318,10 @@ $AppGwJob = New-AzApplicationGateway `
   -Sku $Sku `
   -AsJob
 
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 5
 
-if ($AppGwJob.State -Match "Failed") {
-  Write-Error "[ERROR] AzApplicationGateway failed. $AppGwJob"
+if ($AppGwJob.State -eq "Failed") {
+  Write-Error "AzApplicationGateway async JOB failed. MSG: $($AppGwJob.ChildJobs[0].JobStateInfo.Reason.Message)"
+} else {
+  Write-Host "AzApplicationGateway async JOB started successfully: $(Receive-Job $AppGwJob)" -ForegroundColor Green 
 }
-

@@ -13,7 +13,7 @@ do {
 do {
   $AppGw = Get-AzApplicationGateway -Name ${APP_GW_NAME}  -ResourceGroupName ${ARG_NAME}
   Start-Sleep -Seconds 10
-  echo "[$(date)] Waiting for AppGw to have ProvisioningState $($AppGw.ProvisioningState)/Succeeded, OperationalState $($AppGw.OperationalState)/Running..."
+  echo "[$(date)] Waiting for AppGw to have ProvisioningState [$($AppGw.ProvisioningState)==Succeeded], OperationalState [$($AppGw.OperationalState)==Running]..."
 } while ($AppGw.ProvisioningState -notmatch "Succeeded" -or  $AppGw.OperationalState -notmatch "Running")
 
 

@@ -76,6 +76,7 @@ Function az_container_create_for_customer() {
 
 $out = az_container_create_for_customer
 while (!$out -or $out.provisioningState -notmatch "Succeeded") {
+  Write-Host "For this operation to succeed, image has to be in ACI. Please do `make build`." -ForegroundColor Orange 
   Start-Sleep -Seconds 10
   $out = az_container_create_for_customer
 }

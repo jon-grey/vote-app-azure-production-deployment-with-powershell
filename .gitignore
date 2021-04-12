@@ -1,0 +1,6 @@
+.env
+.secrets.env
+.rbac.secrets.env
+mysql-data 
+*.pem
+.files

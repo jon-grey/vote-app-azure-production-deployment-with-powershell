@@ -15,47 +15,58 @@ echo '
 # ===============================================================================
 # Try to create AKV
 # ==============================================================================='
-
-$KevVault = New-AzKeyVault `
-  -Name ${AKV_NAME} `
+$KeyVault = Get-AzKeyVault `
+  -VaultName ${AKV_NAME} `
   -ResourceGroupName ${ARG_NAME} `
-  -Location  ${LOCATION} `
-  -EnabledForDeployment `
-  -EnabledForDiskEncryption `
-  -EnablePurgeProtection `
   -ErrorVariable notPresent `
   -ErrorAction SilentlyContinue
 
-if ($notPresent -or -not $KevVault) {
+if ($notPresent -or -not $KeyVault) {
+  echo '
+  # ===============================================================================
+  # Could not get AKV. Try to create new.
+  # ==============================================================================='
+  $KeyVault = New-AzKeyVault `
+    -Name ${AKV_NAME} `
+    -ResourceGroupName ${ARG_NAME} `
+    -Location  ${LOCATION} `
+    -EnabledForDeployment `
+    -EnabledForDiskEncryption `
+    -EnablePurgeProtection `
+    -ErrorVariable notPresent `
+    -ErrorAction SilentlyContinue
+}
+
+if ($notPresent -or -not $KeyVault) {
   echo '
   # ===============================================================================
   # Could not create AKV. Try to undo removal.
   # ==============================================================================='
-  $KevVault = Undo-AzKeyVaultRemoval `
-  -VaultName ${AKV_NAME} `
-  -ResourceGroupName ${ARG_NAME} `
-  -Location ${LOCATION} `
-  -ErrorVariable notPresent `
-  -ErrorAction SilentlyContinue
+  $KeyVault = Undo-AzKeyVaultRemoval `
+    -VaultName ${AKV_NAME} `
+    -ResourceGroupName ${ARG_NAME} `
+    -Location ${LOCATION} `
+    -ErrorVariable notPresent `
+    -ErrorAction SilentlyContinue
 }
 
 echo '
 # ===============================================================================
 # Get AKV
 # ==============================================================================='
-$KevVault = Get-AzKeyVault `
+$KeyVault = Get-AzKeyVault `
   -VaultName ${AKV_NAME} `
   -ResourceGroupName ${ARG_NAME} `
   -ErrorVariable notPresent `
   -ErrorAction SilentlyContinue
 
-if ($notPresent -or -not $KevVault) {
+if ($notPresent -or -not $KeyVault) {
   Write-Error "Could not get AKV. Abort."
 }
 
-if (!KeyVault.)
-
-$KevVault | Update-AzKeyVault -EnablePurgeProtection
+if (!$KeyVault.EnablePurgeProtection) {
+  $KeyVault | Update-AzKeyVault -EnablePurgeProtection
+}
 
 $KeyVault = Get-AzKeyVault `
   -VaultName ${AKV_NAME} `

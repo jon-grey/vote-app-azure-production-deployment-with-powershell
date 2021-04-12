@@ -9,17 +9,28 @@ echo '
 
 Setup-Module Az.ManagedServiceIdentity
 
-New-AzUserAssignedIdentity -ResourceGroupName ${ARG_NAME} -Name  ${AMI_NAME} 
+$ManagedIdentity=Get-AzUserAssignedIdentity `
+-ResourceGroupName ${ARG_NAME} `
+-Name ${AMI_NAME} `
+-ErrorVariable notPresent `
+-ErrorAction SilentlyContinue 
+
+if ($notPresent -or -not $ManagedIdentity) {
+    New-AzUserAssignedIdentity -ResourceGroupName ${ARG_NAME} -Name  ${AMI_NAME} 
+}
+
 
 echo '
 # ===============================================================================
 # Get AMI
 # ==============================================================================='
-$identity=(Get-AzUserAssignedIdentity -ResourceGroupName ${ARG_NAME} -Name ${AMI_NAME} )
+$ManagedIdentity=Get-AzUserAssignedIdentity `
+    -ResourceGroupName ${ARG_NAME} `
+    -Name ${AMI_NAME} 
 
-$identityID=$identity.Id
-$identityPrincipalID= $identity.principalId
-$identitySecretUrl= $identity.clientSecretUrl
+$identityID=$ManagedIdentity.Id
+$identityPrincipalID= $ManagedIdentity.principalId
+$identitySecretUrl= $ManagedIdentity.clientSecretUrl
 
 echo "identityID=$identityID"
 echo "identityPrincipalID=$identityPrincipalID"
