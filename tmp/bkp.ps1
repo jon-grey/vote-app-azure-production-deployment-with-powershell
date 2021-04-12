@@ -256,7 +256,7 @@ Get-AzKeyVault `
 #   $ServiceEndpoints = @{ Service = "Microsoft.KeyVault" }
 # } else {
 #   $Subnet.ServiceEndpoints += @{ Service = "Microsoft.KeyVault" }
-#   $ServiceEndpoints = $Subnet.ServiceEndpoints
+#   $ServiceEndpoints = $Subnet.ServiceEndpoints.Service
 # }
 
 # Set-AzVirtualNetworkSubnetConfig `

@@ -4,69 +4,19 @@ Set-StrictMode -Version Latest
 
 . .env.ps1
 
-echo '
-# ===============================================================================
-# Create Network Security Group with Rules and Associate to ACI Subnet
-# Rules: Rule100_Outbound_Allow_FromVnet_ToMySql, 
-#        Rule110_Outbound_Deny_FromVnet_ToInternet
-# ==============================================================================='
-
-$Rule100 = New-AzNetworkSecurityRuleConfig `
--Name Rule100_Outbound_Allow_FromVnet_ToMySql `
--Description "Allow outbound access to MySQL on port 3306" `
--Priority 100 `
--Access Allow `
--Protocol TCP `
--Direction Outbound `
--SourceAddressPrefix VirtualNetwork `
--SourcePortRange '*' `
--DestinationAddressPrefix Sql `
--DestinationPortRange 3306
-
-$Rule110 = New-AzNetworkSecurityRuleConfig `
--Name Rule110_Outbound_Deny_FromVnet_ToInternet `
--Description "Block outbound access to Internet" `
--Priority 110 `
--Access Deny `
--Protocol '*' `
--Direction Outbound `
--SourceAddressPrefix VirtualNetwork `
--SourcePortRange '*' `
--DestinationAddressPrefix Internet `
--DestinationPortRange '*'
-
-$AciNSG = New-AzNetworkSecurityGroup `
--ResourceGroupName ${ARG_NAME} `
--Location ${LOCATION} `
--Name ${ACI_NET_SEC_GR_NAME} `
--SecurityRules $Rule100,$Rule110
-
-$VNet = Get-AzVirtualNetwork `
-  -Name ${VNET_NAME} `
-  -ResourceGroupName ${ARG_NAME}
-
-$Subnet = Get-AzVirtualNetworkSubnetConfig `
-  -Name ${VNET_SUB_ACI_NAME} `
-  -VirtualNetwork $VNet 
-
-$HasEndpoints=($Subnet | Select-Object ServiceEndpoints)
-
-# TODO kinda redundant
-if (-not $HasEndpoints.ServiceEndpoints) {
-  $ServiceEndpoints = $null
-} else {
-  $ServiceEndpoints = $Subnet.ServiceEndpoints
-}
+do {
+  $AppGw = Get-AzApplicationGateway -Name ${APP_GW_NAME}  -ResourceGroupName ${ARG_NAME} -ErrorVariable notPresent -ErrorAction SilentlyContinue
+  Start-Sleep -Seconds 10
+} while ($notPresent -or -not $AppGw)
 
 
-Set-AzVirtualNetworkSubnetConfig `
-  -Name ${VNET_SUB_ACI_NAME} `
-  -VirtualNetwork $VNet `
-  -AddressPrefix $Subnet.AddressPrefix `
-  -Delegation $Subnet.Delegations `
-  -NetworkSecurityGroup $AciNSG `
-  -ServiceEndpoint $ServiceEndpoints `
-| Set-AzVirtualNetwork
+do {
+  $AppGw = Get-AzApplicationGateway -Name ${APP_GW_NAME}  -ResourceGroupName ${ARG_NAME}
+  Start-Sleep -Seconds 10
+  echo "[$(date)] Waiting for AppGw to have ProvisioningState $($AppGw.ProvisioningState)/Succeeded, OperationalState $($AppGw.OperationalState)/Running..."
+} while ($AppGw.ProvisioningState -notmatch "Succeeded" -or  $AppGw.OperationalState -notmatch "Running")
+
+
 
 echo '
 # ===============================================================================

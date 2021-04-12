@@ -9,10 +9,12 @@ echo '
 #################################################################################'
 $SUBSCRIPTION_ID="53cda94b-af20-45ab-82c0-04e260445517"
 
+. ./powershell-scripts/scripts.ps1
+Set-PsEnv ./.env.secrets
 
 echo '
 # ===============================================================================
-# Multi tenant resources
+# Internal resources
 # ==============================================================================='
 
 # TODO naming should match pattern '^[-\w\._\(\)]+$'
@@ -25,30 +27,7 @@ $AKV_NAME="myKeyVault-${UNIQUE_ID}"
 # users: managed identity
 $AMI_NAME="myManagedIdentity-${UNIQUE_ID}"
 # computing: container registry
-$ACR_NAME="mycontainerregistry${UNIQUE_ID}".ToLower()
+$ACR_NAME="myContaineRregistry${UNIQUE_ID}"
+$ACR_NAME_LOW=$ACR_NAME.ToLower()
 $ACR_ENC_KEY_NAME="myKeyForEncryptionOfContainerRegistry-$ACR_NAME"
 
-echo '
-# ===============================================================================
-# Helper Functions
-# ==============================================================================='
-
-function new-ipaddress {
-    param (
-        [string]$ip,
-     
-        [ValidateRange(0,255)]
-        [int]$newoctet
-    )
-     $ip = ($ip -split '/')[0]
-     $octets = $ip -split "\."
-     $octets[3] = $newoctet.ToString()
-     
-     $newaddress = $octets -join "."
-     $newaddress
-}
-Function pause ($message)
-{
-    Write-Host "$message" -ForegroundColor Yellow
-    $x = $host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-}

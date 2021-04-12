@@ -6,8 +6,8 @@ Set-StrictMode -Version Latest
 echo '
 #################################################################################
 #### Create App GW
+#### Azure Application Gateway	1,000 per subscription	
 #################################################################################'
-
 echo '
 # ===============================================================================
 # Create App Gw IP Config associated to Vnet Subnet
@@ -30,7 +30,9 @@ $GatewayIPConfigurations = New-AzApplicationGatewayIPConfiguration `
 
 echo '
 # ===============================================================================
-# Create App Gw Frontend for specific Public IP
+# Create App Gw Frontend for specific Public IP and Private IP
+# Front-end IP configurations, 2,	1 public and 1 private
+# Front-end ports	100
 # ===============================================================================
 '
 
@@ -51,7 +53,7 @@ $FrontEndIpConfigPublic = New-AzApplicationGatewayFrontendIPConfig `
 # Create App Gw Frontend Ip Config associated to Public IP
 $FrontEndIpConfigPrivate = New-AzApplicationGatewayFrontendIPConfig `
   -Name "appGwPrivateFrontendIp" `
-  -PrivateIPAddress (new-ipaddress $SubnetAppGw.AddressPrefix 10) `
+  -PrivateIPAddress (Set-IpAddressOctet $SubnetAppGw.AddressPrefix 10) `
   -Subnet $SubnetAppGw
 
 # TODO uncomment it and handle update properly
@@ -65,11 +67,21 @@ $FrontEndIpConfigPrivate = New-AzApplicationGatewayFrontendIPConfig `
 # $FrontEndIpConfig = Get-AzApplicationGatewayFrontendIPConfig `
 # -ApplicationGateway $AppGw 
 
-echo '
+
+echo "
 # ===============================================================================
 # Create App Gw HttpListener for specific customer subdomain
 # require: FrontEndPort, FrontEndIpConfig
-# ==============================================================================='
+# ===============================================================================
+
+HTTP listeners,	200,	Limited to 100 active listeners that are routing traffic. 
+Active listeners = total number of listeners - listeners not active.
+If a default configuration inside a routing rule is set to route traffic 
+(for example, it has a listener, a backend pool, and HTTP settings) 
+then that also counts as a listener.
+"
+
+$Listeners = @()
 
 $BasicListener = New-AzApplicationGatewayHttpListener `
   -Name "${APP_GW_HTTP_LISTE_BASIC_NAME}" `
@@ -84,12 +96,33 @@ $DummyListener = New-AzApplicationGatewayHttpListener `
   -FrontendIpConfiguration $FrontEndIpConfigPublic `
   -HostName ${DNS_ZONE_NAME}
 
-$CustomerListener = New-AzApplicationGatewayHttpListener `
-  -Name ${APP_GW_HTTP_LISTE_CUSTOMER_NAME} `
+$DummyAppListener = New-AzApplicationGatewayHttpListener `
+  -Name "${APP_GW_HTTP_LISTE_BASIC_NAME}DummyApp" `
   -Protocol ${APP_GW_BACK_POOL_PROTO} `
   -FrontendPort $FrontEndPort `
   -FrontendIpConfiguration $FrontEndIpConfigPublic `
-  -HostName ${APP_GW_HTTP_LISTE_HOST_NAME}
+  -HostName "app.${DNS_ZONE_NAME}"
+
+$CUSTOMERS_IDX.forEach({
+  $CustomerId = $_
+  $C = $CUSTOMERS_MAP[$CustomerId]
+
+  echo "===== Add new CustomerListener for CustomerId: $CustomerId with Name $($C.APP_GW_HTTP_LISTE_CUSTOMER_NAME) and HostName $($C.APP_GW_HTTP_LISTE_HOST_NAME)"
+  
+  $CustomerListener = New-AzApplicationGatewayHttpListener `
+    -FrontendPort $FrontEndPort `
+    -FrontendIpConfiguration $FrontEndIpConfigPublic `
+    -Protocol ${APP_GW_BACK_POOL_PROTO} `
+    -Name $C.APP_GW_HTTP_LISTE_CUSTOMER_NAME `
+    -HostName $C.APP_GW_HTTP_LISTE_HOST_NAME
+
+  $CUSTOMERS_MAP[$CustomerId]['APP_GW_HTTP_LISTE_CUSTOMER'] = $CustomerListener
+  $Listeners += $CustomerListener
+})
+
+$Listeners += $DummyAppListener 
+$Listeners += $DummyListener 
+$Listeners += $BasicListener 
 
 # TODO uncomment it and handle update properly
 # $AppGw.HttpListeners += $CustomerListener
@@ -99,7 +132,11 @@ $CustomerListener = New-AzApplicationGatewayHttpListener `
 echo '
 # ===============================================================================
 # Create App Gw Backend
+# Back-end address pools,	100
 # ==============================================================================='
+
+$BackendPools = @()
+
 
 # Create App Gw Backend Pool pointing to Customer ACG
 $BasicBackendPool = New-AzApplicationGatewayBackendAddressPool `
@@ -108,14 +145,35 @@ $BasicBackendPool = New-AzApplicationGatewayBackendAddressPool `
 $DummyBackendPool = New-AzApplicationGatewayBackendAddressPool `
   -Name "${APP_GW_BACK_POOL_BASIC_NAME}Dummy"
 
-$CustomerBackendPool = New-AzApplicationGatewayBackendAddressPool `
-  -Name ${APP_GW_BACK_POOL_CUSTOMER_NAME}
+$DummyAppBackendPool = New-AzApplicationGatewayBackendAddressPool `
+  -Name "${APP_GW_BACK_POOL_BASIC_NAME}DummyApp"
 
-# TODO uncomment it and handle update properly
+$CUSTOMERS_IDX.forEach({
+  $CustomerId = $_
+  $C = $CUSTOMERS_MAP[$CustomerId]
+
+  echo "===== Add new CustomerListener for CustomerId: $CustomerId with Name $($C.APP_GW_HTTP_LISTE_CUSTOMER_NAME) and HostName $($C.APP_GW_HTTP_LISTE_HOST_NAME)"
+  
+  $CustomerBackendPool = New-AzApplicationGatewayBackendAddressPool `
+    -Name $C.APP_GW_BACK_POOL_CUSTOMER_NAME
+
+  $CUSTOMERS_MAP[$CustomerId]['APP_GW_BACK_POOL_CUSTOMER'] = $CustomerBackendPool
+  $BackendPools += $CustomerBackendPool 
+})
+
+$BackendPools += $DummyAppBackendPool 
+$BackendPools += $DummyBackendPool 
+$BackendPools += $BasicBackendPool 
 #$AppGw.BackendAddressPools += $CustomerBackendPool
 #$AppGw = Set-AzApplicationGateway -ApplicationGateway $AppGw
 
+echo '
+# ===============================================================================
 # Create App Gw Backend Http Settings
+# Back-end HTTP settings,	100
+# ==============================================================================='
+
+$BackendSettings = @()
 
 $BasicBackendSettings = New-AzApplicationGatewayBackendHttpSettings `
   -Name ${APP_GW_BACK_HTTP_SETS_BASIC_NAME} `
@@ -130,14 +188,24 @@ $DummyBackendSettings = New-AzApplicationGatewayBackendHttpSettings `
   -CookieBasedAffinity "Disabled" `
   -HostName ${DNS_ZONE_NAME}
 
-$CustomerBackendSettings = New-AzApplicationGatewayBackendHttpSettings `
-  -Name ${APP_GW_BACK_HTTP_SETS_CUSTOMER_NAME} `
+$DummyAppBackendSettings = New-AzApplicationGatewayBackendHttpSettings `
+  -Name "${APP_GW_BACK_HTTP_SETS_BASIC_NAME}DummyApp" `
   -Port ${APP_GW_BACK_POOL_PORT} `
   -Protocol ${APP_GW_BACK_POOL_PROTO} `
   -CookieBasedAffinity "Disabled" `
-  -HostName ${APP_GW_HTTP_LISTE_HOST_NAME}
+  -HostName "app.${DNS_ZONE_NAME}"
 
-# TODO uncomment it and handle update properly
+$CustomersAppBackendSettings = New-AzApplicationGatewayBackendHttpSettings `
+  -Name "${APP_GW_BACK_HTTP_SETS_CUSTOMERS_NAME}" `
+  -Port ${APP_GW_BACK_POOL_PORT} `
+  -Protocol ${APP_GW_BACK_POOL_PROTO} `
+  -CookieBasedAffinity "Disabled" `
+  -HostName "*.app.${DNS_ZONE_NAME}"
+
+$BackendSettings += $CustomersAppBackendSettings
+$BackendSettings += $DummyAppBackendSettings
+$BackendSettings += $DummyBackendSettings
+$BackendSettings += $BasicBackendSettings
 # $BackendSettings = Get-AzApplicationGatewayBackendHttpSetting `
 #   -Name ${APP_GW_BACK_HTTP_SETS_NAME} `
 #   -ApplicationGateway $AppGw 
@@ -147,6 +215,8 @@ echo '
 # Create App Gw Routing Rule for specific customer subdomain
 # require: Listener, BackendPool, BackendSettings
 # ==============================================================================='
+
+$Rules = @()
 
 $BasicRule = New-AzApplicationGatewayRequestRoutingRule `
   -Name ${APP_GW_ROUTING_RULE_BASIC_NAME} `
@@ -162,26 +232,50 @@ $DummyRule = New-AzApplicationGatewayRequestRoutingRule `
   -HttpListener $DummyListener `
   -BackendAddressPool $DummyBackendPool
 
-$CustomerRule = New-AzApplicationGatewayRequestRoutingRule `
-  -Name ${APP_GW_ROUTING_RULE_CUSTOMER_NAME} `
+$DummyAppRule = New-AzApplicationGatewayRequestRoutingRule `
+  -Name "${APP_GW_ROUTING_RULE_BASIC_NAME}DummyApp" `
   -RuleType Basic `
-  -BackendHttpSettings $CustomerBackendSettings `
-  -HttpListener $CustomerListener `
-  -BackendAddressPool $CustomerBackendPool
+  -BackendHttpSettings $DummyAppBackendSettings `
+  -HttpListener $DummyAppListener `
+  -BackendAddressPool $DummyAppBackendPool
 
 
-# TODO uncomment it and handle update properly
+$CUSTOMERS_IDX.forEach({
+    $CustomerId = $_
+    $C = $CUSTOMERS_MAP[$CustomerId]
+  
+    echo "===== Add new RequestRoutingRule for CustomerId: $CustomerId with Name $($C.APP_GW_ROUTING_RULE_CUSTOMER_NAME)"
+    
+    $CustomerAppRule = New-AzApplicationGatewayRequestRoutingRule `
+      -Name $C.APP_GW_ROUTING_RULE_CUSTOMER_NAME `
+      -RuleType Basic `
+      -BackendHttpSettings $DummyAppBackendSettings `
+      -HttpListener $C['APP_GW_HTTP_LISTE_CUSTOMER']  `
+      -BackendAddressPool $C['APP_GW_BACK_POOL_CUSTOMER']
+   
+    $CUSTOMERS_MAP[$CustomerId]['APP_GW_ROUTING_RULE_CUSTOMER'] = $CustomerAppRule
+
+    $Rules += $CustomerAppRule 
+  })
+
+$Rules += $DummyAppRule 
+$Rules += $DummyRule 
+$Rules += $BasicRule 
 # $AppGw.RequestRoutingRules += $CustomerRule
 # $AppGw = Set-AzApplicationGateway -ApplicationGateway $AppGw
 
 echo '
 # ===============================================================================
-# Create App Gw
-# require: BackendPool, BackendSettings, FrontEndIpConfig, FrontEndPort, 
-#          IpConfigAppGw, Listener, Rule, Sku
+# Create App Gw Autoscaling Config
+# ==============================================================================='
+$AutoscaleConfig = New-AzApplicationGatewayAutoscaleConfiguration -MinCapacity 0 -MaxCapacity 3
+
+echo '
+# ===============================================================================
+# Create App Gw Identity
 # ==============================================================================='
 
-$Identity=(az identity show --resource-group ${ARG_NAME} --name ${AMI_NAME}) | ConvertFrom-Json
+$Identity=(az identity show --resource-group ${ARG_INTERNAL_NAME} --name ${AMI_NAME}) | ConvertFrom-Json
 
 $AppGwIdentity = New-AzApplicationGatewayIdentity -UserAssignedIdentityId $Identity.Id
 
@@ -190,19 +284,42 @@ $AppGwIdentity = New-AzApplicationGatewayIdentity -UserAssignedIdentityId $Ident
 # otherwise it will fail with error: 
 # ... Application Gateway SKU name Standard_v2 is not valid for the SKU tier Standard
 
+echo '
+# ===============================================================================
+# Create App Gw Sku
+# ==============================================================================='
+
+
 $Sku = New-AzApplicationGatewaySku -Name $APP_GW_SKU_NAME -Tier $APP_GW_SKU_TIER -Capacity ${APP_GW_SKU_CAP}
+
+echo '
+# ===============================================================================
+# Create App Gw
+# require: BackendPool, BackendSettings, FrontEndIpConfig, FrontEndPort, 
+#          IpConfigAppGw, Listener, Rule, Sku
+# ==============================================================================='
+
 
 # Create App Gw
 $AppGwJob = New-AzApplicationGateway `
   -Name ${APP_GW_NAME} `
   -Location ${LOCATION} `
   -ResourceGroupName ${ARG_NAME} `
-  -GatewayIpConfigurations $GatewayIPConfigurations `
   -FrontendPorts $FrontEndPort `
   -FrontendIpConfigurations @($FrontEndIpConfigPublic, $FrontEndIpConfigPrivate) `
-  -BackendHttpSettingsCollection  @($CustomerBackendSettings, $DummyBackendSettings, $BasicBackendSettings) `
-  -BackendAddressPools  @($CustomerBackendPool, $DummyBackendPool, $BasicBackendPool) `
-  -RequestRoutingRules  @($CustomerRule, $DummyRule, $BasicRule) `
-  -HttpListeners  @($CustomerListener, $DummyListener, $BasicListener) `
+  -AutoscaleConfiguration $AutoscaleConfig `
+  -GatewayIpConfigurations $GatewayIPConfigurations `
+  -BackendHttpSettingsCollection $BackendSettings `
+  -BackendAddressPools  $BackendPools `
+  -RequestRoutingRules  $Rules `
+  -HttpListeners $Listeners `
+  -Identity $AppGwIdentity `
   -Sku $Sku `
-  -Identity $AppGwIdentity 
+  -AsJob
+
+Start-Sleep -Seconds 10
+
+if ($AppGwJob.State -Match "Failed") {
+  Write-Error "[ERROR] AzApplicationGateway failed. $AppGwJob"
+}
+

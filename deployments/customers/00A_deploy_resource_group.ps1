@@ -1,6 +1,6 @@
 Set-StrictMode -Version Latest
 
-. ./.env.ps1
+. .env.ps1
 
 echo '
 #################################################################################
@@ -8,3 +8,4 @@ echo '
 #################################################################################'
 
 $ResourceGroup = New-AzResourceGroup -Name ${ARG_NAME} -Location ${LOCATION}
+

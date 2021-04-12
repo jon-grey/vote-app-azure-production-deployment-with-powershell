@@ -13,23 +13,9 @@ echo '
 # Create MySQL Server
 # ==============================================================================='
 
-$MyModule = "Az.MySql"
-if(-not (Get-Module -ListAvailable -Name $MyModule)) {
-    Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-    Install-Module -Name $MyModule -Confirm:$False
-    Import-Module -name $MyModule
-}
+Setup-Module "Az.MySql"
+Setup-Module "SimplySql"
 
-# Install `mysql` cli on Azure Powershell
-$MyModule = "SimplySql"
-if(-not (Get-Module -ListAvailable -Name $MyModule)) {
-  Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-  Install-Module -Name $MyModule -Confirm:$False
-  Import-Module -name $MyModule
-}
-
-
-$MySqlAdminLoginPassword = ${MYSQL_ROOT_PASSWORD} | ConvertTo-SecureString -AsPlainText -Force
 
 # FIXME: preview kinda broken
 # New-AzMySqlFlexibleServer `
@@ -71,20 +57,23 @@ echo '
 # pricing-tier_compute-generation_vCores 
 # as shown in the following examples:
 #   -Sku B_Gen5_1 maps to Basic, Gen 5, and 1 vCore. This option is the smallest SKU available.
+#   -GP_Gen5_2 smallest GP
 #   -Sku GP_Gen5_32 maps to General Purpose, Gen 5, and 32 vCores.
 #   -Sku MO_Gen5_2 maps to Memory Optimized, Gen 5, and 2 vCores.
 
-# IMPORTANT 
+# IMPORTANT To create Service Enpoint  
 # New-AzMySqlVirtualNetworkRule_CreateExpanded: This feature is not available 
 # for the selected edition Basic, has to use SKU: General Purpose!
 '
 
+$MySqlAdminLoginPassword = $CUSTOMER.MYSQL_ROOT_PASSWORD | ConvertTo-SecureString -AsPlainText -Force
+
 $MySqLSrvJob = New-AzMySqlServer `
-  -Name ${MY_SQL_SRV_NAME} `
+  -Name $CUSTOMER.MY_SQL_SRV_NAME `
   -Location ${LOCATION} `
   -ResourceGroupName ${ARG_NAME} `
   -AdministratorLoginPassword $MySqlAdminLoginPassword `
-  -AdministratorUsername ${MYSQL_ROOT_LOGIN} `
+  -AdministratorUsername $CUSTOMER.MYSQL_ROOT_LOGIN `
   -Sku GP_Gen5_2 `
   -Version $v8_0 `
   -StorageInMb (5 * 1024) `
@@ -92,3 +81,11 @@ $MySqLSrvJob = New-AzMySqlServer `
   -SslEnforcement Disabled `
   -StorageAutogrow Enabled `
   -AsJob 
+
+Start-Sleep -Seconds 10
+
+if ($MySqLSrvJob.State -Match "Failed") {
+  Write-Error "[ERROR] MySqLSrvJob failed. $MySqLSrvJob"
+}
+
+echo $MySqLSrvJob

@@ -1,24 +1,26 @@
 Set-StrictMode -Version Latest
 
-. .env.ps1
+. ./.env.ps1
 
 echo '
 #################################################################################
 #### Create Managed Identity
 #################################################################################'
-az identity create `
---resource-group ${ARG_NAME} `
---name ${AMI_NAME}
+
+Setup-Module Az.ManagedServiceIdentity
+
+New-AzUserAssignedIdentity -ResourceGroupName ${ARG_NAME} -Name  ${AMI_NAME} 
 
 echo '
 # ===============================================================================
 # Get AMI
 # ==============================================================================='
-$identity=(az identity show `
---resource-group ${ARG_NAME} `
---name ${AMI_NAME} `
-| ConvertFrom-Json)
+$identity=(Get-AzUserAssignedIdentity -ResourceGroupName ${ARG_NAME} -Name ${AMI_NAME} )
 
 $identityID=$identity.Id
 $identityPrincipalID= $identity.principalId
 $identitySecretUrl= $identity.clientSecretUrl
+
+echo "identityID=$identityID"
+echo "identityPrincipalID=$identityPrincipalID"
+echo "identitySecretUrl=$identitySecretUrl"

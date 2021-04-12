@@ -1,6 +1,6 @@
 Set-StrictMode -Version Latest
 
-. .env.ps1
+. ./.env.ps1
 
 echo '
 #################################################################################
@@ -30,13 +30,46 @@ echo '
 # PS1 does not supoort encr key
 '
 
+echo '
+# ===============================================================================
+# Get key ID
+# ==============================================================================='
+
+$ACR_ENC_KEY=Get-AzKeyVaultKey `
+  -VaultName ${AKV_NAME} `
+  -Name ${ACR_ENC_KEY_NAME}
+$ACR_ENC_KEY
+
+$ACR_ENC_KEY_ID = $ACR_ENC_KEY.Id
+
+$ACR_ENC_KEY_ID=(echo $ACR_ENC_KEY_ID | sed -e "s/\/[^/]*$//")
+$ACR_ENC_KEY_ID
+
+
+echo '
+# ===============================================================================
+# Get User AMI
+# ==============================================================================='
+
+$identity=Get-AzUserAssignedIdentity -ResourceGroupName ${ARG_NAME} -Name ${AMI_NAME}
+
+echo "User AMI is", $identity
+
+
+echo '
+# ===============================================================================
+# Create ACR
+# ==============================================================================='
+
+
 az acr create `
   --resource-group ${ARG_NAME} `
   --name $ACR_NAME `
-  --identity $identityID `
+  --identity $identity.id `
   --key-encryption-key $ACR_ENC_KEY_ID `
   --admin-enabled true `
-  --sku Premium
+  --sku Premium 
+
 
   # TODO Maybe use basic, price is 
 # az acr create `

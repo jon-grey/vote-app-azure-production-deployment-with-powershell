@@ -1,3 +1,12 @@
 [submodule "builds/vote-app"]
 	path = builds/vote-app
-	url = https://github.com/jon-grey/vote-app-docker-compose-build-push-to-azure-container-registry
+	url = git@github.com:jon-grey/vote-app-docker-compose-build-push-to-azure-container-registry.git
+[submodule "deployments/customer/powershell-scripts"]
+	path = deployments/customer/powershell-scripts
+	url = git@github.com:jon-grey/powershell-scripts.git
+[submodule "deployments/customers/powershell-scripts"]
+	path = deployments/customers/powershell-scripts
+	url = git@github.com:jon-grey/powershell-scripts.git
+[submodule "deployments/internal/powershell-scripts"]
+	path = deployments/internal/powershell-scripts
+	url = git@github.com:jon-grey/powershell-scripts.git

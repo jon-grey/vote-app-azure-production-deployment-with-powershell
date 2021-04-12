@@ -1,32 +1,68 @@
 Set-StrictMode -Version Latest
 
-. .env.ps1
+. ./.env.ps1
 
 echo '
 #################################################################################
 #### Create Key Vault for secrets
 #################################################################################'
-$ErrorActionPreferencePrev = $ErrorActionPreference 
-$ErrorActionPreference = "Continue"
+# $ErrorActionPreferencePrev = $ErrorActionPreference 
+# $ErrorActionPreference = "Continue"
+# $ErrorActionPreference = $ErrorActionPreferencePrev
 
-New-AzKeyVault `
+
+echo '
+# ===============================================================================
+# Try to create AKV
+# ==============================================================================='
+
+$KevVault = New-AzKeyVault `
   -Name ${AKV_NAME} `
   -ResourceGroupName ${ARG_NAME} `
   -Location  ${LOCATION} `
   -EnabledForDeployment `
   -EnabledForDiskEncryption `
-  -EnablePurgeProtection 
+  -EnablePurgeProtection `
+  -ErrorVariable notPresent `
+  -ErrorAction SilentlyContinue
 
-Get-AzKeyVault `
+if ($notPresent -or -not $KevVault) {
+  echo '
+  # ===============================================================================
+  # Could not create AKV. Try to undo removal.
+  # ==============================================================================='
+  $KevVault = Undo-AzKeyVaultRemoval `
   -VaultName ${AKV_NAME} `
   -ResourceGroupName ${ARG_NAME} `
-| Update-AzKeyVault -EnablePurgeProtection
+  -Location ${LOCATION} `
+  -ErrorVariable notPresent `
+  -ErrorAction SilentlyContinue
+}
 
-$ErrorActionPreference = $ErrorActionPreferencePrev
+echo '
+# ===============================================================================
+# Get AKV
+# ==============================================================================='
+$KevVault = Get-AzKeyVault `
+  -VaultName ${AKV_NAME} `
+  -ResourceGroupName ${ARG_NAME} `
+  -ErrorVariable notPresent `
+  -ErrorAction SilentlyContinue
+
+if ($notPresent -or -not $KevVault) {
+  Write-Error "Could not get AKV. Abort."
+}
+
+if (!KeyVault.)
+
+$KevVault | Update-AzKeyVault -EnablePurgeProtection
 
 $KeyVault = Get-AzKeyVault `
   -VaultName ${AKV_NAME} `
   -ResourceGroupName ${ARG_NAME}
+
+$KeyVault
+
 # TODO not needed for AKV used by ACR
 # $VNet = Get-AzVirtualNetwork `
 #   -Name ${VNET_NAME} `
@@ -43,7 +79,7 @@ $KeyVault = Get-AzKeyVault `
 #   $ServiceEndpoints = @{ Service = "Microsoft.KeyVault" }
 # } else {
 #   $Subnet.ServiceEndpoints += @{ Service = "Microsoft.KeyVault" }
-#   $ServiceEndpoints = $Subnet.ServiceEndpoints
+#   $ServiceEndpoints = $Subnet.ServiceEndpoints.Service
 # }
 
 # Set-AzVirtualNetworkSubnetConfig `
@@ -71,25 +107,25 @@ $KeyVault = Get-AzKeyVault `
 # Add-AzKeyVaultNetworkRule: Invalid value found at properties.networkAcls.ipRules[0].value: 10.0.1.0/24 belongs to forbidden range 10.0.0.0–10.255.255.255 (private IP addresses). Same for 172.16.0.0/24 and 
 
 
-echo '
-# ===============================================================================
-# Grant full permissions to KV to current user
-# ==============================================================================='
+# echo '
+# # ===============================================================================
+# # Grant full permissions to KV to current user
+# # ==============================================================================='
 
-$MyModule = "Az.Resources"
-if(-not (Get-Module -ListAvailable -Name $MyModule)) {
-  Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-  Install-Module -Name $MyModule -Confirm:$False
-  Import-Module -name $MyModule
-}
+# $MyModule = "Az.Resources"
+# if(-not (Get-Module -ListAvailable -Name $MyModule)) {
+#   Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+#   Install-Module -Name $MyModule -Confirm:$False
+#   Import-Module -name $MyModule
+# }
 
-$User = Get-AzADUser
+# $User = Get-AzADUser
 
-az keyvault set-policy `
-  --resource-group ${ARG_NAME}  `
-  --name ${AKV_NAME} `
-  --object-id $User.Id `
-  --certificate-permissions backup create delete deleteissuers get getissuers import list listissuers managecontacts manageissuers purge recover restore setissuers update `
-  --key-permissions backup create decrypt delete encrypt get import list purge recover restore sign unwrapKey update verify wrapKey `
-  --secret-permissions backup delete get list purge recover restore set `
-  --storage-permissions backup delete deletesas get getsas list listsas purge recover regeneratekey restore set setsas update 
+# az keyvault set-policy `
+#   --resource-group ${ARG_NAME}  `
+#   --name ${AKV_NAME} `
+#   --object-id $User.Id `
+#   --certificate-permissions backup create delete deleteissuers get getissuers import list listissuers managecontacts manageissuers purge recover restore setissuers update `
+#   --key-permissions backup create decrypt delete encrypt get import list purge recover restore sign unwrapKey update verify wrapKey `
+#   --secret-permissions backup delete get list purge recover restore set `
+#   --storage-permissions backup delete deletesas get getsas list listsas purge recover regeneratekey restore set setsas update 

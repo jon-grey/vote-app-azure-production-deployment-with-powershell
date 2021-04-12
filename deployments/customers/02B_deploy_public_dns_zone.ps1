@@ -49,13 +49,14 @@ New-AzDnsRecordSet `
   -ResourceGroupName ${ARG_NAME} `
   -TargetResourceId $PublicIp.Id
 
-New-AzDnsRecordSet `
-  -Name '*' `
-  -RecordType A `
-  -Ttl 300 `
-  -ZoneName ${DNS_ZONE_NAME} `
-  -ResourceGroupName ${ARG_NAME} `
-  -TargetResourceId $PublicIp.Id
+# Feel thats its breaking some routing?
+# New-AzDnsRecordSet `
+#   -Name '*' `
+#   -RecordType A `
+#   -Ttl 300 `
+#   -ZoneName ${DNS_ZONE_NAME} `
+#   -ResourceGroupName ${ARG_NAME} `
+#   -TargetResourceId $PublicIp.Id
 
 New-AzDnsRecordSet `
   -Name '*' `
