@@ -1,0 +1,274 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "subnetName": {
+            "type": "string",
+            "defaultValue": "subnetDefault",
+            "metadata": {
+                "description": "Subnet Name"
+            }
+        },
+        "subnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/24",
+            "metadata": {
+                "description": "Subnet prefix"
+            }
+        }
+    },
+    "resources": [],
+    "outputs": {
+        "subnet": {
+            //TODO replace with "[parameters('xxx')]"
+            "type": "object",
+            "value": {
+                "name": "subnetAAG",
+                "properties": {
+                    "addressPrefix": "10.0.0.0/24",
+                    "networkSecurityGroup": {
+                        "id": "[parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_externalid')]"
+                    },
+                    "serviceEndpoints": [],
+                    "delegations": [],
+                    "privateEndpointNetworkPolicies": "Enabled",
+                    "privateLinkServiceNetworkPolicies": "Enabled"
+                }
+            }
+        }
+    }
+}
+
+/*
+ALL entries
+                    {
+                        "name": "subnetAAG",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050001",
+                        "properties": {
+                            "addressPrefix": "10.0.2.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050002",
+                        "properties": {
+                            "addressPrefix": "10.0.3.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050003",
+                        "properties": {
+                            "addressPrefix": "10.0.4.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050004",
+                        "properties": {
+                            "addressPrefix": "10.0.5.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050005",
+                        "properties": {
+                            "addressPrefix": "10.0.6.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050006",
+                        "properties": {
+                            "addressPrefix": "10.0.7.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050007",
+                        "properties": {
+                            "addressPrefix": "10.0.8.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050008",
+                        "properties": {
+                            "addressPrefix": "10.0.9.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050009",
+                        "properties": {
+                            "addressPrefix": "10.0.10.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-21050010",
+                        "properties": {
+                            "addressPrefix": "10.0.11.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_externalid')]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "subnetACI-customer-dummy",
+                        "properties": {
+                            "addressPrefix": "10.0.1.0/24",
+                            "serviceEndpoints": [],
+                            "delegations": [
+                                {
+                                    "name": "Microsoft.ContainerInstance/containerGroups",
+                                    "properties": {
+                                        "serviceName": "Microsoft.ContainerInstance/containerGroups"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    }
+*/

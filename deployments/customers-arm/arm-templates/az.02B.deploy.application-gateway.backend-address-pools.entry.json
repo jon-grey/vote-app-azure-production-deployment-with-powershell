@@ -1,0 +1,142 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "protocol": {
+      "type": "string",
+      "defaultValue": "Http"
+    },
+    "port": {
+      "type": "int",
+      "defaultValue": 80
+    },
+    "id": {
+      "type": "string",
+      "defaultValue": "CustomerDummy"
+    },
+    "backendIpAddress": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "dummy": {
+      "type": "string",
+      "defaultValue": ""
+    }
+  },
+  "variables": {
+    "name": "[concat('appGwBackendPool', parameters('protocol'), parameters('port'), parameters('id'))]",
+    "backendAddresses": [
+      {
+        "IpAddress": "[parameters('backendIpAddress')]"
+      }
+    ],
+    "backendAddressesEmpty": []
+  },
+  "resources": [],
+  "outputs": {
+    "backendAddressPool": {
+      "type": "object",
+      "value": {
+        "name": "[variables('name')]",
+        "properties": {
+          "backendAddresses": "[if(equals(parameters('backendIpAddress'),''), variables('backendAddressesEmpty'), variables('backendAddresses'))]"
+        }
+      }
+    }
+  }
+}
+
+/*
+{
+
+                "backendAddressPools": [
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050001",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050002",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050003",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050004",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050005",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050006",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050007",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050008",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050009",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Customer21050010",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80DummyApp",
+                        "properties": {
+                            "backendAddresses": [
+                                {
+                                    "ipAddress": "10.0.1.5"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80Dummy",
+                        "properties": {
+                            "backendAddresses": [
+                                {
+                                    "ipAddress": "10.0.1.4"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "appGwBackendPoolHttp80",
+                        "properties": {
+                            "backendAddresses": []
+                        }
+                    }
+                ],
+ 
+}
+*/

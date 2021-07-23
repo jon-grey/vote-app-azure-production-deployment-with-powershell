@@ -54,20 +54,20 @@ echo "
 . ./02B_deploy_public_dns_zone.ps1
 . ./02B_deploy_vnet_subnet_for_app_gw.ps1
 . ./02B_deploy_vnet_subnets_for_aci.ps1
-. ./02B_deploy_app_gateway.ps1
+# . ./02B_deploy_app_gateway.ps1
 
-echo "
-# #################################################################################
-# #### Begin STAGE 3
-# #################################################################################"
-. ./03B_deploy_security_group_for_subnet_aci.ps1
-. ./03B_deploy_security_group_for_subnet_app_gw.ps1
-. ./03E_deploy_container_instance.ps1
+# echo "
+# # #################################################################################
+# # #### Begin STAGE 3
+# # #################################################################################"
+# . ./03B_deploy_security_group_for_subnet_aci.ps1
+# . ./03B_deploy_security_group_for_subnet_app_gw.ps1
+# . ./03E_deploy_container_instance.ps1
 
-echo "
-# #################################################################################
-# #### Begin STAGE 4
-# #################################################################################"
-. ./04B_deploy_add_container_instance_to_app_gw_backend_pool.ps1
+# echo "
+# # #################################################################################
+# # #### Begin STAGE 4
+# # #################################################################################"
+# . ./04B_deploy_add_container_instance_to_app_gw_backend_pool.ps1
 
 

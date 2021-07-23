@@ -5,7 +5,10 @@ Set-StrictMode -Version Latest
 echo "
 #################################################################################
 #### Create DNS Zone $DNS_ZONE_NAME and child zone app.$DNS_ZONE_NAME
-#################################################################################"
+#################################################################################
+[Azure DNS delegation overview](https://docs.microsoft.com/en-us/azure/dns/dns-domain-delegation)
+[New-AzDnsZone (Az.Dns)](https://docs.microsoft.com/en-us/powershell/module/az.dns/new-azdnszone?view=azps-5.7.0)
+"
 $ErrorActionPreferencePrev = $ErrorActionPreference 
 $ErrorActionPreference = "Continue"
 

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appGwName": {
+      "type": "string"
+    },
+    "protocol": {
+      "type": "string",
+      "defaultValue": "Http"
+    },
+    "port": {
+      "type": "int",
+      "defaultValue": 80
+    },
+    "id": {
+      "type": "string",
+      "defaultValue": "CustomerDummy"
+    },
+    "hostName": {
+      "type": "string" //"21050009.app.lubimyjedzenie.pl", "app.lubimyjedzenie.pl", "lubimyjedzenie.pl", $null
+    }
+  },
+  "variables": {
+  },
+  "resources": [],
+  "outputs": {
+    "httpListeners": {
+      "type": "object",
+      "value": {
+        "name": "[concat('appGwHttpListener', parameters('protocol'), parameters('port'), parameters('id'))]",
+        "properties": {
+          "FrontendIPConfiguration": {
+            "id": "[resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName'), 'frontendIPConfigurations/appGwPublicFrontendIp')]"
+          },
+          "FrontendPort": {
+            "id": "[resourceId('Microsoft.Network/applicationGateways/',parameters('appGwName'), 'frontendPorts/appGwFrontEndPort80')]"
+          },
+          "Protocol": "[parameters('protocol')]",
+          "hostName": "[if(equals(parameters('hostName'),''), json('null'), parameters('hostName'))]",
+          "hostNames": [],
+          "requireServerNameIndication": false,
+          "customErrorConfigurations": []
+        }
+      }
+    }
+  }
+}
+

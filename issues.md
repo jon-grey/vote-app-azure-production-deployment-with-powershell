@@ -1,3 +1,13 @@
+# ARM Templates vs Bicep Templates
+
+## (NO) Support for remote Bicep Files
+
+> Note
+> 
+> Currently, Azure PowerShell doesn't support deploying remote Bicep files.
+> 
+> Use Bicep CLI to compile the Bicep file to a JSON template, and then load the JSON file to the remote location.
+
 # Public IP and AppGW
 
 1. Public IP Basic Tier with Dynamic IP + App GW Standard (Small)
@@ -322,7 +332,7 @@ az network dns record-set a create `
 --name '*' `
 --zone-name ${DNS_ZONE} `
 --resource-group ${RES_GR_NAME} `
---target-resource "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RES_GR_NAME}/providers/Microsoft.Network/publicIPAddresses/${PUB_IP_NAME_APP_GW_NAME}"
+--target-resource "/subscriptions/${AZ_SUBS_ID}/resourceGroups/${RES_GR_NAME}/providers/Microsoft.Network/publicIPAddresses/${PUB_IP_NAME_APP_GW_NAME}"
 
 # use with static IP
 az network dns record-set a add-record `

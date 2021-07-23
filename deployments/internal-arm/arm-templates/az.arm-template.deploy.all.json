@@ -1,0 +1,304 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 11,
+      "metadata": {
+        "description": "Specify a project name that is used to generate resource names."
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify a location for the resources."
+      },
+      "defaultValue": "eastus",
+      "allowedValues": [
+        "southcentralus",
+        "westus",
+        "centralus",
+        "eastus",
+        "northcentralus",
+        "westcentralus"
+      ]
+    },
+    "currentUserServicePrincipalClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "<currentUserServicePrincipalClientId>"
+      }
+    },
+    "resourceTags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "Dev",
+        "Project": "[parameters('projectName')]"
+      }
+    }
+  },
+  "variables": {
+    // storageAcc - 10
+    // uniqueString(resourceGroup().id) - len == 13
+    "uniqueString": "[uniqueString(resourceGroup().id)]",
+    "storageAccountName": "[toLower(concat('storageAcc', variables('uniqueString')))]",
+    "containerRegistryName": "[concat('containerReg',parameters('projectName'), variables('uniqueString'))]",
+    "keyForContainerRegistryEncryptionName": "[concat('key-', variables('containerRegistryName'))]",
+    "managedIdentityName": "[concat('managedIdentity-', parameters('projectName'))]",
+    "keyVaultName": "[concat('keyVault-', parameters('projectName'))]"
+  },
+  "resources": [
+    {
+      "name": "deploymentManagedIdentity",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "tags": "[parameters('resourceTags')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.01A.deploy.managed-identity.json"
+        },
+        "parameters": {
+          "name": {
+            "value": "[variables('managedIdentityName')]"
+          },
+          "resourceTags": { "value": "[parameters('resourceTags')]" },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "deploymentKeyVault",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "tags": "[parameters('resourceTags')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.01D.deploy.key-vault.json"
+        },
+        "parameters": {
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceTags": { "value": "[parameters('resourceTags')]" },
+
+          "enabledForDeployment": {
+            "value": true
+          },
+          "enabledForDiskEncryption": {
+            "value": true
+          },
+          "enabledForTemplateDeployment": {
+            "value": true
+          },
+          "enableSoftDelete": {
+            "value": true
+          },
+          "softDeleteRetentionInDays": {
+            "value": 7
+          },
+          "enableRbacAuthorization": {
+            "value": false
+          },
+          "enablePurgeProtection": {
+            "value": true
+          },
+          "tenantId": {
+            "value": "[subscription().tenantId]"
+          },
+          "skuName": {
+            "value": "Standard"
+          }
+        }
+      }
+    },
+    {
+      "name": "deploymentKeyVaultAccessPolicyEntryForManagedIdentity",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "tags": "[parameters('resourceTags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentManagedIdentity')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.02A.deploy.key-vault.access-policy.entry.json"
+        },
+        "parameters": {
+          "objectId": {
+            "value": "[reference('deploymentManagedIdentity').outputs.principalId.value]"
+          },
+          "keysPermissions": { "value": [ "get", "unwrapKey", "wrapKey" ] },
+          "secretsPermissions": {
+            "value": [
+              "delete",
+              "get",
+              "list",
+              "purge",
+              "recover",
+              "restore",
+              "set"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "deploymentKeyVaultAccessPolicyEntryForUserServicePrincipal",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "tags": "[parameters('resourceTags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentManagedIdentity')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.02A.deploy.key-vault.access-policy.entry.json"
+        },
+        "parameters": {
+          "objectId": {
+            "value": "[parameters('currentUserServicePrincipalClientId')]"
+          },
+          "keysPermissions": {
+            "value": [ "all" ]
+          },
+          "secretsPermissions": {
+            "value": [ "all" ]
+          },
+          "certificatesPermissions": {
+            "value": [ "all" ]
+          },
+          "storagePermissions": {
+            "value": [ "all" ]
+          }
+        }
+      }
+    },
+    {
+      "name": "deploymentKeyVaultAccessPolicies",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "tags": "[parameters('resourceTags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentManagedIdentity')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.02A.deploy.key-vault.access-policies.json"
+        },
+        "parameters": {
+          "keyVaultName": { "value": "[variables('keyVaultName')]" },
+          "resourceTags": { "value": "[parameters('resourceTags')]" },
+          "operationType": {
+            "value": "add"
+          },
+          "accessPolicies": {
+            "value": [
+              "[reference('deploymentKeyVaultAccessPolicyEntryForManagedIdentity').outputs.accessPolicy.value]",
+              "[reference('deploymentKeyVaultAccessPolicyEntryForUserServicePrincipal').outputs.accessPolicy.value]"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "deploymenKeyForContainerRegistryEncryption",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "tags": "[parameters('resourceTags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVaultAccessPolicies')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.03A.deploy.key-vault.key.json"
+        },
+        "parameters": {
+          "keyName": {
+            "value": "[variables('keyForContainerRegistryEncryptionName')]"
+          },
+          "keyVaultName": { "value": "[variables('keyVaultName')]" },
+          "location": { "value": "[parameters('location')]" },
+          "resourceTags": { "value": "[parameters('resourceTags')]" }
+        }
+      }
+    },
+    {
+      "name": "deploymentContainerRegistry",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "tags": "[parameters('resourceTags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVaultAccessPolicies')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploymenKeyForContainerRegistryEncryption')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentManagedIdentity')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.04D.deploy.container-registry.json"
+        },
+        "parameters": {
+          "name": { "value": "[variables('containerRegistryName')]" },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceTags": { "value": "[parameters('resourceTags')]" },
+          "acrAdminUserEnabled": {
+            "value": true
+          },
+          "acrSku": {
+            "value": "Premium"
+          },
+          "userAssignedIdentityId": {
+            "value": "[reference('deploymentManagedIdentity').outputResources[0].id]"
+          },
+          "keyVaultProperties": {
+            "value": {
+              "keyIdentifier": "[reference('deploymenKeyForContainerRegistryEncryption').outputs.keyUri.value]",
+              "identity": "[reference('deploymentManagedIdentity').outputs.clientId.value]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "userAssignedIdentity": {
+      "type": "object",
+      "value": {
+        "principalId": "[reference('deploymentManagedIdentity').outputs.principalId.value]",
+        "clientId": "[reference('deploymentManagedIdentity').outputs.clientId.value]",
+        "userAssignedIdentities": "[reference('deploymentManagedIdentity').outputResources[0].id]"
+      }
+    },
+    "keyVaultProperties": {
+      "type": "object",
+      "value": {
+        "keyIdentifier": "[reference('deploymenKeyForContainerRegistryEncryption').outputs.keyUri.value]",
+        "identity": "[reference('deploymentManagedIdentity').outputs.clientId.value]"
+      }
+    },
+    "acrLoginServer": {
+      "value": "[reference('deploymentContainerRegistry').outputs.acrLoginServer.value]",
+      "type": "string"
+    }
+  }
+}

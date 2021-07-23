@@ -1,0 +1,389 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appGwName": {
+      "type": "string"
+    },
+
+    // "addressPrefix": {
+    //   "type": "string",
+    //   "defaultValue": "10.0.0.0/16",
+    //   "metadata": {
+    //     "description": "Address prefix for the Virtual Network"
+    //   }
+    // },
+    // "subnetPrefix": {
+    //   "type": "string",
+    //   "defaultValue": "10.0.0.0/28",
+    //   "metadata": {
+    //     "description": "Subnet prefix"
+    //   }
+    // },
+
+    "skuName": {
+      "type": "string",
+      "allowedValues": [ "Standard_Small", "Standard_Medium", "Standard_Large", "Standard_v2" ],
+      "defaultValue": "Standard_v2",
+      "metadata": {
+        "description": "Sku Name"
+      }
+    },
+    "capacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Number of instances"
+      }
+    },
+    // "BackendAddresses": {
+    //   "type": "array",
+    //   "defaultValue": []
+    // },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    // },
+    //  "certData": {
+    //   "type": "string",
+    //   "metadata": {
+    //     "description": "Base-64 encoded form of the .pfx file"
+    //   }
+    // },
+    // "certPassword": {
+    //   "type": "securestring",
+    //   "metadata": {
+    //     "description": "Password for .pfx certificate"
+    //   }
+    // }
+    "resourceTags": {
+      "type": "object",
+      "defaultValue": {}
+    },
+    "userAssignedIdentityId": {
+      "type": "string",
+      "defaultValue" : "/subscriptions/53cda94b-af20-45ab-82c0-04e260445517/resourcegroups/myResourceGroup-InternalARM/providers/Microsoft.ManagedIdentity/userAssignedIdentities/managedIdentity-InternalARM"
+    },
+    "customersCount": {
+      "type": "int",
+      "defaultValue": 2
+    },
+    "vnetName": {
+      "type": "string"
+    },
+    "subnetName": {
+      "type": "string"
+    },
+
+    "subnetAddressWithMask": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24"
+    },
+
+    "publicIPAddressName": {
+      "type": "string",
+      "defaultValue": "[concat('myPublicIp_', parameters('appGwName'))]"
+    },
+    "dnsZoneName": {
+      "type": "string"
+    },
+    "subDnsZoneName": {
+      "type": "string",
+      "defaultValue": "[concat('app.', parameters('dnsZoneName'))]"
+    },
+    "appGwFrontendPort": {
+      "type": "int",
+      "defaultValue": 80
+    },
+    "appGwFrontendProtocol": {
+      "type": "string",
+      "defaultValue": "Http"
+    }
+  },
+  "variables": {
+    "someNumber": 21050000,
+    "hostName": "lubimyjedzenie.pl",
+
+
+    "copy": [
+      {
+        "name": "m_backendPoolsCustomers",
+        "count": "[parameters('customersCount')]",
+        "input": {
+          "name": "[concat(last(variables('m_backendPoolsBasic')).name, 'Customer', copyIndex('m_backendPoolsCustomers', variables('someNumber')))]",
+          "properties": { "backendAddresses": [] }
+        }
+      },
+      {
+        "name": "m_httpListenersCustomer",
+        "count": "[parameters('customersCount')]",
+        "input": {
+          "name": "[concat(last(variables('m_httpListenersBasic')).name, 'Customer', copyIndex('m_httpListenersCustomer', variables('someNumber')))]",
+          "protocol": "Http",
+          "hostName": "[concat(copyIndex('m_httpListenersCustomer', variables('someNumber')) ,'.',parameters('subDnsZoneName'))]"
+        }
+      },
+      {
+        "name": "m_requestRoutingRulesCustomer",
+        "count": "[parameters('customersCount')]",
+        "input": {
+          "name": "[concat('appGwRoutingRule', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), copyIndex('m_requestRoutingRulesCustomer', variables('someNumber')))]",
+          "httpListener": "[concat(last(variables('m_httpListenersBasic')).name, 'Customer', copyIndex('m_requestRoutingRulesCustomer', variables('someNumber')))]",
+          "backendAddressPool": "[concat(last(variables('m_backendPoolsBasic')).name, 'Customer', copyIndex('m_requestRoutingRulesCustomer', variables('someNumber')))]",
+          "backendHttpSettings": "[first(variables('m_backendHttpSettingsCollection')).name]"
+        }
+      }
+    ],
+    "m_backendPoolsBasic": [
+      {
+        "name": "[concat('appGwBackendPool', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'DummyApp')]",
+        "properties": { "backendAddresses": [] }
+      },
+      {
+        "name": "[concat('appGwBackendPool', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'Dummy')]",
+        "properties": { "backendAddresses": [] }
+      },
+      {
+        "name": "[concat('appGwBackendPool', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+        "properties": { "backendAddresses": [] }
+      }
+    ],
+
+    "m_backendHttpSettingsCollection": [
+      {
+        "name": "[concat('appGwBackendHttpSettings', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'Customers')]",
+        "properties": {
+          "port": "[parameters('appGwFrontendPort')]",
+          "protocol": "[parameters('appGwFrontendProtocol')]",
+          "cookieBasedAffinity": "Disabled",
+          "hostName": "[concat('*', 'app', variables('hostName') )]",
+          "pickHostNameFromBackendAddress": false,
+          "requestTimeout": 30
+        }
+      },
+      {
+        "name": "[concat('appGwBackendHttpSettings', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'DummyApp')]",
+        "properties": {
+          "port": "[parameters('appGwFrontendPort')]",
+          "protocol": "[parameters('appGwFrontendProtocol')]",
+          "cookieBasedAffinity": "Disabled",
+          "hostName": "[concat('app', variables('hostName') )]",
+          "pickHostNameFromBackendAddress": false,
+          "requestTimeout": 30
+        }
+      },
+      {
+        "name": "[concat('appGwBackendHttpSettings', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'Dummy')]",
+        "properties": {
+          "port": "[parameters('appGwFrontendPort')]",
+          "protocol": "[parameters('appGwFrontendProtocol')]",
+          "cookieBasedAffinity": "Disabled",
+          "hostName": "[variables('hostName')]",
+          "pickHostNameFromBackendAddress": false,
+          "requestTimeout": 30
+        }
+      },
+      {
+        "name": "[concat('appGwBackendHttpSettings', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+        "properties": {
+          "port": "[parameters('appGwFrontendPort')]",
+          "protocol": "[parameters('appGwFrontendProtocol')]",
+          "cookieBasedAffinity": "Disabled",
+          "pickHostNameFromBackendAddress": false,
+          "requestTimeout": 30
+        }
+      }
+    ],
+    "m_httpListenersBasic": [
+      {
+        "name": "[concat('appGwHttpListener',parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'DummyApp')]",
+        "protocol": "[parameters('appGwFrontendProtocol')]",
+        "hostName": "[parameters('subDnsZoneName')]"
+      },
+      {
+        "name": "[concat('appGwHttpListener',parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'Dummy')]",
+        "protocol": "[parameters('appGwFrontendProtocol')]",
+        "hostName": "[parameters('dnsZoneName')]"
+      },
+
+      {
+        "name": "[concat('appGwHttpListener',parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+        "protocol": "[parameters('appGwFrontendProtocol')]",
+        "hostName": "[json('null')]"
+      }
+    ],
+
+    "m_requestRoutingRulesBasic": [
+      {
+        "name": "[concat('appGwRoutingRule', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'DummyApp' )]",
+        "httpListener": "[variables('m_httpListenersBasic')[0].name]",
+        "backendAddressPool": "[variables('m_backendPoolsBasic')[0].name]",
+        "backendHttpSettings": "[variables('m_backendHttpSettingsCollection')[0].name]"
+      },
+      {
+        "name": "[concat('appGwRoutingRule', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'), 'Dummy' )]",
+        "httpListener": "[variables('m_httpListenersBasic')[1].name]",
+        "backendAddressPool": "[variables('m_backendPoolsBasic')[1].name]",
+        "backendHttpSettings": "[variables('m_backendHttpSettingsCollection')[1].name]"
+      },
+      {
+        "name": "[concat('appGwRoutingRule', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+        "httpListener": "[variables('m_httpListenersBasic')[2].name]",
+        "backendAddressPool": "[variables('m_backendPoolsBasic')[2].name]",
+        "backendHttpSettings": "[variables('m_backendHttpSettingsCollection')[2].name]"
+      }
+    ],
+
+    "m_backendPools": "[variables('m_backendPoolsBasic')]", //"[concat(variables('m_backendPoolsCustomers'), variables('m_backendPoolsBasic'))]",
+    "m_httpListeners": "[variables('m_httpListenersBasic')]", //"[concat(variables('m_httpListenersCustomer'), variables('m_httpListenersBasic'))]",
+    "m_requestRoutingRules": "[variables('m_requestRoutingRulesBasic')]", //"[concat(variables('m_requestRoutingRulesCustomer'), variables('m_requestRoutingRulesBasic'))]",
+
+    "subnetAddress": "[first(split(parameters('subnetAddressWithMask'), '/'))]",
+    "subnetOctets3": "[take(split(variables('subnetAddress'), '.'), 3)]",
+    "subnetNetwork": "[concat(variables('subnetOctets3')[0], '.', variables('subnetOctets3')[1], '.', variables('subnetOctets3')[2])]"
+  },
+  "outputs": {
+
+  },
+  "resources": [
+    // APP GW + settings + bpool -> listeners -> rules
+    // APP GW
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2020-11-01",
+      "name": "[parameters('appGwName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        // "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]",
+        // "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddressName'))]"
+      ],
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[parameters('userAssignedIdentityId')]": {}
+        }
+      },
+      "properties": {
+        "urlPathMaps": [],
+        "probes": [],
+        "rewriteRuleSets": [],
+        "redirectConfigurations": [],
+        "privateLinkConfigurations": [],
+        "autoscaleConfiguration": {
+          "minCapacity": 0,
+          "maxCapacity": 3
+        },
+        "customErrorConfigurations": [],
+
+        //  "sslCertificates": [
+        //   {
+        //     "name": "appGwSslCert",
+        //     "properties": {
+        //       "data": "[parameters('certData')]",
+        //       "password": "[parameters('certPassword')]"
+        //     }
+        //   }
+        // ],
+        // "trustedRootCertificates": [],
+        // "trustedClientCertificates": [],
+        // "sslProfiles": [],
+        "sku": {
+          "name": "[parameters('skuName')]",
+          "tier": "[parameters('skuName')]"
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "[concat(parameters('appGwName'), '_IpConfig_', parameters('subnetName') )]",
+            "properties": {
+              "subnet": {
+                "id": "[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/', parameters('vnetName'), '/subnets/', parameters('subnetName'))]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGwPublicFrontendIP",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "PublicIPAddress": {
+                "id": "[concat(resourceGroup().id, '/providers/Microsoft.Network/publicIPAddresses/',parameters('publicIPAddressName'))]"
+              }
+            }
+          },
+          {
+            "name": "appGwPrivateFrontendIP",
+            "properties": {
+              //Enter a private IP address in the address space of the subnet 
+              // you have chosen for this application gateway.
+              "privateIPAddress": "[concat(variables('subnetNetwork'), '.', 10)]",
+              "privateIPAllocationMethod": "Static",
+              "subnet": {
+                "id": "[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/', parameters('vnetName'), '/subnets/', parameters('subnetName'))]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "[concat('appGwFrontendPort',parameters('appGwFrontendPort'))]",
+            "properties": {
+              "Port": "[parameters('appGwFrontendPort')]"
+            }
+          }
+        ],
+        "backendAddressPools": "[variables('m_backendPools')]",
+        "backendHttpSettingsCollection": "[variables('m_backendHttpSettingsCollection')]",
+        "copy": [
+          {
+            "name": "httpListeners",
+            "count": "[length(variables('m_httpListeners'))]",
+            "mode": "serial",
+            "batchSize": 1,
+            "input": {
+              "name": "[variables('m_httpListeners')[copyIndex('httpListeners')].name]",
+              "properties": {
+                "frontendIPConfiguration": {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName')), '/frontendIPConfigurations/appGwPublicFrontendIP')]"
+                },
+                "frontendPort": {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName')), '/frontendPorts/appGwFrontendPort',parameters('appGwFrontendPort'))]"
+                },
+                "protocol": "[variables('m_httpListeners')[copyIndex('httpListeners')].protocol]",
+                "hostName": "[variables('m_httpListeners')[copyIndex('httpListeners')].hostName]",
+                "hostNames": [],
+                "requireServerNameIndication": false,
+                "customErrorConfigurations": []
+              }
+            }
+          },
+          {
+            "name": "requestRoutingRules",
+            "count": "[length(variables('m_requestRoutingRules'))]",
+            "mode": "serial",
+            "batchSize": 1,
+            "input": {
+              "Name": "[variables('m_requestRoutingRules')[copyIndex('requestRoutingRules')].name]",
+              "properties": {
+                "RuleType": "Basic",
+                "httpListener": {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName')), '/httpListeners/', variables('m_requestRoutingRules')[copyIndex('requestRoutingRules')].httpListener)]"
+                },
+                "backendAddressPool": {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways/',parameters('appGwName')), '/backendAddressPools/', variables('m_requestRoutingRules')[copyIndex('requestRoutingRules')].backendAddressPool)]"
+                },
+                "backendHttpSettings": {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways/',parameters('appGwName')), '/backendHttpSettingsCollection/', variables('m_requestRoutingRules')[copyIndex('requestRoutingRules')].backendHttpSettings)]"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

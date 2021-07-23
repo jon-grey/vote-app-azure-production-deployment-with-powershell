@@ -1,0 +1,162 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "containerGroupName": {
+            "defaultValue": "aci-containergroup-dummy-000",
+            "type": "String"
+        },
+        "containers": {
+            "defaultValue": [],
+            "type": "array"
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        }
+    },
+
+    "variables": {
+        "networkProfileName": "aci-network-profile-myVNet-492233-subnetACI-customer-dummy",
+        "interfaceConfigName": "eth0",
+        "interfaceIpConfig": "ipconfigprofile1"
+    },
+    "resources": [
+        {
+            "name": "[variables('networkProfileName')]",
+            "type": "Microsoft.Network/networkProfiles",
+            "apiVersion": "2020-05-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "containerNetworkInterfaceConfigurations": [
+                    {
+                        "name": "[variables('interfaceConfigName')]",
+                        "properties": {
+                            "ipConfigurations": [
+                                {
+                                    "name": "[variables('interfaceIpConfig')]",
+                                    "properties": {
+                                        "subnet": {
+                                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2021-03-01",
+            "name": "[parameters('containerGroupName')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkProfiles', variables('networkProfileName'))]"
+            ],
+            "properties": {
+                "sku": "Standard",
+                "containers": "[parameters('containers')]",
+                "initContainers": [],
+                "restartPolicy": "Always",
+                "ipAddress": {
+                    "ports": [
+                        {
+                            "protocol": "TCP",
+                            "port": 80
+                        }
+                    ],
+                    "ip": "10.0.1.4",
+                    "type": "Private"
+                },
+                "osType": "Linux",
+                "networkProfile": {
+                    "id": "[resourceId('Microsoft.Network/networkProfiles', variables('networkProfileName'))]"
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "containerIPv4Address": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.ip]"
+        }
+    }
+}
+
+
+/*
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "containerGroups_containerinstance_dummy_000_name": {
+            "defaultValue": "containerinstance-dummy-000",
+            "type": "String"
+        },
+        "networkProfiles_aci_network_profile_myVNet_492233_subnetACI_customer_dummy_externalid": {
+            "defaultValue": "/subscriptions/53cda94b-af20-45ab-82c0-04e260445517/resourceGroups/myResourceGroup-492233/providers/Microsoft.Network/networkProfiles/aci-network-profile-myVNet-492233-subnetACI-customer-dummy",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2021-03-01",
+            "name": "[parameters('containerGroups_containerinstance_dummy_000_name')]",
+            "location": "eastus",
+            "properties": {
+                "sku": "Standard",
+                "containers": [
+                    {
+                        "name": "[parameters('containerGroups_containerinstance_dummy_000_name')]",
+                        "properties": {
+                            "image": "mcr.microsoft.com/azuredocs/aks-helloworld:v1",
+                            "ports": [
+                                {
+                                    "protocol": "TCP",
+                                    "port": 80
+                                }
+                            ],
+                            "environmentVariables": [
+                                {
+                                    "name": "TITLE",
+                                    "value": "'dummy-000'"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "memoryInGB": 1.5,
+                                    "cpu": 1
+                                }
+                            }
+                        }
+                    }
+                ],
+                "initContainers": [],
+                "restartPolicy": "Always",
+                "ipAddress": {
+                    "ports": [
+                        {
+                            "protocol": "TCP",
+                            "port": 80
+                        }
+                    ],
+                    "ip": "10.0.1.4",
+                    "type": "Private"
+                },
+                "osType": "Linux",
+                "networkProfile": {
+                    "id": "[parameters('networkProfiles_aci_network_profile_myVNet_492233_subnetACI_customer_dummy_externalid')]"
+                }
+            }
+        }
+    ]
+}
+
+*/

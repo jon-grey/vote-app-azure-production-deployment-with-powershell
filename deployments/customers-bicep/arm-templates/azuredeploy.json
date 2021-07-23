@@ -1,0 +1,837 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.3.255.40792",
+      "templateHash": "11947694206794162740"
+    }
+  },
+  "parameters": {
+    "resourceGroupSuffix": {
+      "type": "string",
+      "metadata": {
+        "description": "Suffix of current resource group, range [0, 800 - managementGroups]"
+      }
+    },
+    "customersChunkSuffix": {
+      "type": "string",
+      "metadata": {
+        "description": "Suffix of current resource group customers chunk, ~ 90-99 customers per chunk"
+      }
+    },
+    "appGwName": {
+      "type": "string",
+      "defaultValue": "[format('myAppGw-{0}', parameters('resourceGroupSuffix'))]",
+      "metadata": {
+        "description": "App Gw Name, ie. appGw-000-000, 1000 App Gw per subscription, 100 rules per App Gw"
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "[format('myVNet-{0}', parameters('resourceGroupSuffix'))]",
+      "metadata": {
+        "description": "Vnet name, ie. vnet, 1000 per subscription."
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "subnetAAG",
+      "metadata": {
+        "description": "Vnet subnet name, ie. subnetAAG, 3000 per vnet."
+      }
+    },
+    "resourceTags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Tags - look at best practices."
+      }
+    },
+    "subnetAddress": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "Subnet IP Address, ie. 10.0.0.0/24"
+      }
+    },
+    "privateIPAddress": {
+      "type": "string",
+      "defaultValue": "10.0.0.10",
+      "metadata": {
+        "description": "Public address used by App Gw Frontend belonging to provided subnet, ie. 10.0.0.10"
+      }
+    },
+    "publicIPAddressName": {
+      "type": "string",
+      "defaultValue": "[format('myPublicIp_{0}', parameters('appGwName'))]",
+      "metadata": {
+        "description": "Public address used by App Gw Frontend, ie. myPublicIp_appGw"
+      }
+    },
+    "userAssignedIdentityId": {
+      "type": "string",
+      "defaultValue": "/subscriptions/53cda94b-af20-45ab-82c0-04e260445517/resourcegroups/myResourceGroup-InternalARM/providers/Microsoft.ManagedIdentity/userAssignedIdentities/managedIdentity-InternalARM",
+      "metadata": {
+        "description": "App Gw User Assigned Identity ID, ie. AMI ID."
+      }
+    },
+    "dnsZoneName": {
+      "type": "string",
+      "defaultValue": "lubimyjedzenie.pl",
+      "metadata": {
+        "description": "Dns zone name, ie. lubimyjedzenie.pl"
+      }
+    },
+    "subDnsZoneName": {
+      "type": "string",
+      "defaultValue": "[format('app.{0}', parameters('dnsZoneName'))]",
+      "metadata": {
+        "description": "Sub dns zone name for customers, ie. app.lubimyjedzenie.pl"
+      }
+    },
+    "customersCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 0,
+      "maxValue": 97,
+      "metadata": {
+        "description": "Customers routing rules, listeners, backend pools to preallocate."
+      }
+    },
+    "lastCustomerId": {
+      "type": "int",
+      "defaultValue": 2120,
+      "metadata": {
+        "description": "Next customers ID prefix string."
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "Standard_v2",
+      "allowedValues": [
+        "Standard_Small",
+        "Standard_Medium",
+        "Standard_Large",
+        "Standard_v2",
+        "WAF_Large",
+        "WAF_Medium",
+        "WAF_v2"
+      ],
+      "metadata": {
+        "description": "Sku Name"
+      }
+    },
+    "skuTier": {
+      "type": "string",
+      "defaultValue": "Standard_v2",
+      "allowedValues": [
+        "Standard",
+        "Standard_v2",
+        "WAF",
+        "WAF_v2"
+      ],
+      "metadata": {
+        "description": "Sku Tier"
+      }
+    },
+    "capacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Number of instances"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "appGwFrontendPort": {
+      "type": "int",
+      "defaultValue": 80,
+      "metadata": {
+        "description": "Port used by App Gw frontend."
+      }
+    },
+    "appGwFrontendProtocol": {
+      "type": "string",
+      "defaultValue": "Http",
+      "metadata": {
+        "description": "Protocol used by App Gw frontend."
+      }
+    }
+  },
+  "functions": [],
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "name": "deploymentAppGwCustomers",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appGwName": {
+            "value": "[parameters('appGwName')]"
+          },
+          "vnetName": {
+            "value": "[parameters('vnetName')]"
+          },
+          "subnetName": {
+            "value": "[parameters('subnetName')]"
+          },
+          "resourceTags": {
+            "value": "[parameters('resourceTags')]"
+          },
+          "subnetAddress": {
+            "value": "[parameters('subnetAddress')]"
+          },
+          "privateIPAddress": {
+            "value": "[parameters('privateIPAddress')]"
+          },
+          "publicIPAddressName": {
+            "value": "[parameters('publicIPAddressName')]"
+          },
+          "userAssignedIdentityId": {
+            "value": "[parameters('userAssignedIdentityId')]"
+          },
+          "dnsZoneName": {
+            "value": "[parameters('dnsZoneName')]"
+          },
+          "subDnsZoneName": {
+            "value": "[parameters('subDnsZoneName')]"
+          },
+          "customersCount": {
+            "value": "[parameters('customersCount')]"
+          },
+          "lastCustomerId": {
+            "value": "[parameters('lastCustomerId')]"
+          },
+          "skuName": {
+            "value": "[parameters('skuName')]"
+          },
+          "skuTier": {
+            "value": "[parameters('skuTier')]"
+          },
+          "capacity": {
+            "value": "[parameters('capacity')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "appGwFrontendPort": {
+            "value": "[parameters('appGwFrontendPort')]"
+          },
+          "appGwFrontendProtocol": {
+            "value": "[parameters('appGwFrontendProtocol')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.3.255.40792",
+              "templateHash": "6090310559010817295"
+            }
+          },
+          "parameters": {
+            "appGwName": {
+              "type": "string",
+              "metadata": {
+                "description": "App Gw Name, ie. appGw"
+              }
+            },
+            "vnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "Vnet name, ie. vnet."
+              }
+            },
+            "subnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "Vnet subnet name, ie. subnetAAG."
+              }
+            },
+            "resourceTags": {
+              "type": "object",
+              "metadata": {
+                "description": "Tags - look at best practices."
+              }
+            },
+            "subnetAddress": {
+              "type": "string",
+              "metadata": {
+                "description": "Subnet IP Address, ie. 10.0.0.0/24"
+              }
+            },
+            "privateIPAddress": {
+              "type": "string",
+              "metadata": {
+                "description": "Public address used by App Gw Frontend belonging to provided subnet, ie. 10.0.0.10"
+              }
+            },
+            "publicIPAddressName": {
+              "type": "string",
+              "metadata": {
+                "description": "Public address used by App Gw Frontend, ie. myPublicIp_appGw"
+              }
+            },
+            "userAssignedIdentityId": {
+              "type": "string",
+              "metadata": {
+                "description": "App Gw User Assigned Identity ID, ie. AMI ID."
+              }
+            },
+            "dnsZoneName": {
+              "type": "string",
+              "metadata": {
+                "description": "Dns zone name, ie. lubimyjedzenie.pl"
+              }
+            },
+            "subDnsZoneName": {
+              "type": "string",
+              "metadata": {
+                "description": "Sub dns zone name for customers, ie. app.lubimyjedzenie.pl"
+              }
+            },
+            "customersCount": {
+              "type": "int",
+              "minValue": 0,
+              "maxValue": 97,
+              "metadata": {
+                "description": "Customers routing rules, listeners, backend pools to preallocate."
+              }
+            },
+            "lastCustomerId": {
+              "type": "int",
+              "metadata": {
+                "description": "Next customers ID prefix string."
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "Standard_v2",
+              "allowedValues": [
+                "Standard_Small",
+                "Standard_Medium",
+                "Standard_Large",
+                "Standard_v2",
+                "WAF_Large",
+                "WAF_Medium",
+                "WAF_v2"
+              ],
+              "metadata": {
+                "description": "Sku Name"
+              }
+            },
+            "skuTier": {
+              "type": "string",
+              "defaultValue": "Standard_v2",
+              "allowedValues": [
+                "Standard",
+                "Standard_v2",
+                "WAF",
+                "WAF_v2"
+              ],
+              "metadata": {
+                "description": "Sku Tier"
+              }
+            },
+            "capacity": {
+              "type": "int",
+              "defaultValue": 1,
+              "metadata": {
+                "description": "Number of instances"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for all resources."
+              }
+            },
+            "appGwFrontendPort": {
+              "type": "int",
+              "defaultValue": 80,
+              "metadata": {
+                "description": "Port used by App Gw frontend."
+              }
+            },
+            "appGwFrontendProtocol": {
+              "type": "string",
+              "defaultValue": "Http",
+              "metadata": {
+                "description": "Protocol used by App Gw frontend."
+              }
+            }
+          },
+          "functions": [],
+          "variables": {
+            "copy": [
+              {
+                "name": "customers",
+                "count": "[length(range(0, parameters('customersCount')))]",
+                "input": {
+                  "id": "[format('{0:D9}', add(parameters('lastCustomerId'), range(0, parameters('customersCount'))[copyIndex('customers')]))]"
+                }
+              },
+              {
+                "name": "m_backendPoolsCustomers",
+                "count": "[length(range(0, parameters('customersCount')))]",
+                "input": {
+                  "name": "[format('{0}Customer{1}', last(variables('m_backendPoolsBasic')).name, variables('customers')[range(0, parameters('customersCount'))[copyIndex('m_backendPoolsCustomers')]].id)]",
+                  "properties": {
+                    "backendAddresses": []
+                  }
+                }
+              },
+              {
+                "name": "m_httpListenersCustomers",
+                "count": "[length(range(0, parameters('customersCount')))]",
+                "input": {
+                  "name": "[format('{0}Customer{1}', last(variables('m_httpListenersBasic')).name, variables('customers')[range(0, parameters('customersCount'))[copyIndex('m_httpListenersCustomers')]].id)]",
+                  "protocol": "Http",
+                  "hostName": "[format('{0}.{1}', variables('customers')[range(0, parameters('customersCount'))[copyIndex('m_httpListenersCustomers')]].id, parameters('subDnsZoneName'))]"
+                }
+              },
+              {
+                "name": "m_requestRoutingRulesCustomers",
+                "count": "[length(range(0, parameters('customersCount')))]",
+                "input": {
+                  "name": "[format('{0}Customer{1}', last(variables('m_requestRoutingRulesBasic')).name, variables('customers')[range(0, parameters('customersCount'))[copyIndex('m_requestRoutingRulesCustomers')]].id)]",
+                  "httpListener": "[format('{0}Customer{1}', last(variables('m_httpListenersBasic')).name, variables('customers')[range(0, parameters('customersCount'))[copyIndex('m_requestRoutingRulesCustomers')]].id)]",
+                  "backendAddressPool": "[format('{0}Customer{1}', last(variables('m_backendPoolsBasic')).name, variables('customers')[range(0, parameters('customersCount'))[copyIndex('m_requestRoutingRulesCustomers')]].id)]",
+                  "backendHttpSettings": "[first(variables('m_backendHttpSettingsCollection')).name]"
+                }
+              }
+            ],
+            "m_backendPoolsBasic": [
+              {
+                "name": "[format('appGwBackendPool{0}{1}DummyApp', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "properties": {
+                  "backendAddresses": []
+                }
+              },
+              {
+                "name": "[format('appGwBackendPool{0}{1}Dummy', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "properties": {
+                  "backendAddresses": []
+                }
+              },
+              {
+                "name": "[format('appGwBackendPool{0}{1}', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "properties": {
+                  "backendAddresses": []
+                }
+              }
+            ],
+            "m_httpListenersBasic": [
+              {
+                "name": "[format('appGwHttpListener{0}{1}DummyApp', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "protocol": "[parameters('appGwFrontendProtocol')]",
+                "hostName": "[parameters('subDnsZoneName')]"
+              },
+              {
+                "name": "[format('appGwHttpListener{0}{1}Dummy', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "protocol": "[parameters('appGwFrontendProtocol')]",
+                "hostName": "[parameters('dnsZoneName')]"
+              },
+              {
+                "name": "[format('appGwHttpListener{0}{1}', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "protocol": "[parameters('appGwFrontendProtocol')]",
+                "hostName": "[json('null')]"
+              }
+            ],
+            "m_requestRoutingRulesBasic": [
+              {
+                "name": "[format('appGwRoutingRule{0}{1}DummyApp', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "httpListener": "[variables('m_httpListenersBasic')[0].name]",
+                "backendAddressPool": "[variables('m_backendPoolsBasic')[0].name]",
+                "backendHttpSettings": "[variables('m_backendHttpSettingsCollection')[0].name]"
+              },
+              {
+                "name": "[format('appGwRoutingRule{0}{1}Dummy', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "httpListener": "[variables('m_httpListenersBasic')[1].name]",
+                "backendAddressPool": "[variables('m_backendPoolsBasic')[1].name]",
+                "backendHttpSettings": "[variables('m_backendHttpSettingsCollection')[1].name]"
+              },
+              {
+                "name": "[format('appGwRoutingRule{0}{1}', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "httpListener": "[variables('m_httpListenersBasic')[2].name]",
+                "backendAddressPool": "[variables('m_backendPoolsBasic')[2].name]",
+                "backendHttpSettings": "[variables('m_backendHttpSettingsCollection')[2].name]"
+              }
+            ],
+            "m_backendHttpSettingsCollection": [
+              {
+                "name": "[format('appGwBackendHttpSettings{0}{1}Customers', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "properties": {
+                  "port": "[parameters('appGwFrontendPort')]",
+                  "protocol": "[parameters('appGwFrontendProtocol')]",
+                  "cookieBasedAffinity": "Disabled",
+                  "hostName": "[format('*.{0}', parameters('subDnsZoneName'))]",
+                  "pickHostNameFromBackendAddress": false,
+                  "requestTimeout": 30
+                }
+              },
+              {
+                "name": "[format('appGwBackendHttpSettings{0}{1}DummyApp', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "properties": {
+                  "port": "[parameters('appGwFrontendPort')]",
+                  "protocol": "[parameters('appGwFrontendProtocol')]",
+                  "cookieBasedAffinity": "Disabled",
+                  "hostName": "[parameters('subDnsZoneName')]",
+                  "pickHostNameFromBackendAddress": false,
+                  "requestTimeout": 30
+                }
+              },
+              {
+                "name": "[format('appGwBackendHttpSettings{0}{1}Dummy', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "properties": {
+                  "port": "[parameters('appGwFrontendPort')]",
+                  "protocol": "[parameters('appGwFrontendProtocol')]",
+                  "cookieBasedAffinity": "Disabled",
+                  "hostName": "[parameters('dnsZoneName')]",
+                  "pickHostNameFromBackendAddress": false,
+                  "requestTimeout": 30
+                }
+              },
+              {
+                "name": "[format('appGwBackendHttpSettings{0}{1}', parameters('appGwFrontendProtocol'), parameters('appGwFrontendPort'))]",
+                "properties": {
+                  "port": "[parameters('appGwFrontendPort')]",
+                  "protocol": "[parameters('appGwFrontendProtocol')]",
+                  "cookieBasedAffinity": "Disabled",
+                  "pickHostNameFromBackendAddress": false,
+                  "requestTimeout": 30
+                }
+              }
+            ],
+            "m_backendPools": "[concat(variables('m_backendPoolsCustomers'), variables('m_backendPoolsBasic'))]",
+            "m_httpListeners": "[concat(variables('m_httpListenersCustomers'), variables('m_httpListenersBasic'))]",
+            "m_requestRoutingRules": "[concat(variables('m_requestRoutingRulesCustomers'), variables('m_requestRoutingRulesBasic'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2019-10-01",
+              "name": "deploymentAppGw",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "appGwName": {
+                    "value": "[parameters('appGwName')]"
+                  },
+                  "skuName": {
+                    "value": "[parameters('skuName')]"
+                  },
+                  "skuTier": {
+                    "value": "[parameters('skuTier')]"
+                  },
+                  "capacity": {
+                    "value": "[parameters('capacity')]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "vnetName": {
+                    "value": "[parameters('vnetName')]"
+                  },
+                  "subnetName": {
+                    "value": "[parameters('subnetName')]"
+                  },
+                  "resourceTags": {
+                    "value": "[parameters('resourceTags')]"
+                  },
+                  "subnetAddress": {
+                    "value": "[parameters('subnetAddress')]"
+                  },
+                  "publicIPAddressName": {
+                    "value": "[parameters('publicIPAddressName')]"
+                  },
+                  "privateIPAddress": {
+                    "value": "[parameters('privateIPAddress')]"
+                  },
+                  "appGwFrontendPort": {
+                    "value": "[parameters('appGwFrontendPort')]"
+                  },
+                  "backendPools": {
+                    "value": "[variables('m_backendPools')]"
+                  },
+                  "httpListeners": {
+                    "value": "[variables('m_httpListeners')]"
+                  },
+                  "requestRoutingRules": {
+                    "value": "[variables('m_requestRoutingRules')]"
+                  },
+                  "backendHttpSettingsCollection": {
+                    "value": "[variables('m_backendHttpSettingsCollection')]"
+                  },
+                  "userAssignedIdentityId": {
+                    "value": "[parameters('userAssignedIdentityId')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.3.255.40792",
+                      "templateHash": "6291960514581287591"
+                    }
+                  },
+                  "parameters": {
+                    "appGwName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "App Gw Name"
+                      }
+                    },
+                    "skuName": {
+                      "type": "string",
+                      "allowedValues": [
+                        "Standard_Small",
+                        "Standard_Medium",
+                        "Standard_Large",
+                        "Standard_v2",
+                        "WAF_Large",
+                        "WAF_Medium",
+                        "WAF_v2"
+                      ],
+                      "metadata": {
+                        "description": "Sku Name"
+                      }
+                    },
+                    "skuTier": {
+                      "type": "string",
+                      "allowedValues": [
+                        "Standard",
+                        "Standard_v2",
+                        "WAF",
+                        "WAF_v2"
+                      ],
+                      "metadata": {
+                        "description": "Sku Tier"
+                      }
+                    },
+                    "capacity": {
+                      "type": "int",
+                      "metadata": {
+                        "description": "Number of instances"
+                      }
+                    },
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Location for all resources."
+                      }
+                    },
+                    "vnetName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Vnet name."
+                      }
+                    },
+                    "subnetName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Vnet subnet name."
+                      }
+                    },
+                    "resourceTags": {
+                      "type": "object",
+                      "metadata": {
+                        "description": "Tags."
+                      }
+                    },
+                    "subnetAddress": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Tags."
+                      }
+                    },
+                    "publicIPAddressName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Public address used by App Gw Frontend."
+                      }
+                    },
+                    "privateIPAddress": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Public address used by App Gw Frontend belonging to provided subnet."
+                      }
+                    },
+                    "appGwFrontendPort": {
+                      "type": "int",
+                      "metadata": {
+                        "description": "Port used by App Gw frontend."
+                      }
+                    },
+                    "backendPools": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "App Gw backend pools holding IP addresses of customer ACI."
+                      }
+                    },
+                    "httpListeners": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "App Gw http listeners for catching domain requests."
+                      }
+                    },
+                    "requestRoutingRules": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "App Gw request routing rules from listeners to backend pools."
+                      }
+                    },
+                    "backendHttpSettingsCollection": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "App Gw settings for routing rules: port, protocol, cookie affinity."
+                      }
+                    },
+                    "userAssignedIdentityId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "App Gw User Assigned Identity, ie. AMI."
+                      }
+                    }
+                  },
+                  "functions": [],
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/applicationGateways",
+                      "apiVersion": "2020-11-01",
+                      "name": "[parameters('appGwName')]",
+                      "location": "[parameters('location')]",
+                      "identity": {
+                        "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                          "[parameters('userAssignedIdentityId')]": {}
+                        }
+                      },
+                      "properties": {
+                        "copy": [
+                          {
+                            "name": "httpListeners",
+                            "count": "[length(parameters('httpListeners'))]",
+                            "input": {
+                              "name": "[parameters('httpListeners')[copyIndex('httpListeners')].name]",
+                              "properties": {
+                                "frontendIPConfiguration": {
+                                  "id": "[format('{0}/frontendIPConfigurations/appGwPublicFrontendIP', resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName')))]"
+                                },
+                                "frontendPort": {
+                                  "id": "[format('{0}/frontendPorts/appGwFrontendPort{1}', resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName')), parameters('appGwFrontendPort'))]"
+                                },
+                                "protocol": "[parameters('httpListeners')[copyIndex('httpListeners')].protocol]",
+                                "hostName": "[parameters('httpListeners')[copyIndex('httpListeners')].hostName]",
+                                "hostNames": [],
+                                "requireServerNameIndication": false,
+                                "customErrorConfigurations": []
+                              }
+                            }
+                          },
+                          {
+                            "name": "requestRoutingRules",
+                            "count": "[length(parameters('requestRoutingRules'))]",
+                            "input": {
+                              "name": "[parameters('requestRoutingRules')[copyIndex('requestRoutingRules')].name]",
+                              "properties": {
+                                "ruleType": "Basic",
+                                "httpListener": {
+                                  "id": "[format('{0}/httpListeners/{1}', resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName')), parameters('requestRoutingRules')[copyIndex('requestRoutingRules')].httpListener)]"
+                                },
+                                "backendAddressPool": {
+                                  "id": "[format('{0}/backendAddressPools/{1}', resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName')), parameters('requestRoutingRules')[copyIndex('requestRoutingRules')].backendAddressPool)]"
+                                },
+                                "backendHttpSettings": {
+                                  "id": "[format('{0}/backendHttpSettingsCollection/{1}', resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName')), parameters('requestRoutingRules')[copyIndex('requestRoutingRules')].backendHttpSettings)]"
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "urlPathMaps": [],
+                        "probes": [],
+                        "rewriteRuleSets": [],
+                        "redirectConfigurations": [],
+                        "privateLinkConfigurations": [],
+                        "autoscaleConfiguration": {
+                          "minCapacity": 0,
+                          "maxCapacity": 3
+                        },
+                        "customErrorConfigurations": [],
+                        "sku": {
+                          "name": "[parameters('skuName')]",
+                          "tier": "[parameters('skuTier')]"
+                        },
+                        "gatewayIPConfigurations": [
+                          {
+                            "name": "[format('{0}_IpConfig_{1}', parameters('appGwName'), parameters('subnetName'))]",
+                            "properties": {
+                              "subnet": {
+                                "id": "[format('{0}/providers/Microsoft.Network/virtualNetworks/{1}/subnets/{2}', resourceGroup().id, parameters('vnetName'), parameters('subnetName'))]"
+                              }
+                            }
+                          }
+                        ],
+                        "frontendIPConfigurations": [
+                          {
+                            "name": "appGwPublicFrontendIP",
+                            "properties": {
+                              "privateIPAllocationMethod": "Dynamic",
+                              "publicIPAddress": {
+                                "id": "[format('{0}/providers/Microsoft.Network/publicIPAddresses/{1}', resourceGroup().id, parameters('publicIPAddressName'))]"
+                              }
+                            }
+                          },
+                          {
+                            "name": "appGwPrivateFrontendIP",
+                            "properties": {
+                              "privateIPAddress": "[parameters('privateIPAddress')]",
+                              "privateIPAllocationMethod": "Static",
+                              "subnet": {
+                                "id": "[format('{0}/providers/Microsoft.Network/virtualNetworks/{1}/subnets/{2}', resourceGroup().id, parameters('vnetName'), parameters('subnetName'))]"
+                              }
+                            }
+                          }
+                        ],
+                        "frontendPorts": [
+                          {
+                            "name": "[format('appGwFrontendPort{0}', parameters('appGwFrontendPort'))]",
+                            "properties": {
+                              "port": "[parameters('appGwFrontendPort')]"
+                            }
+                          }
+                        ],
+                        "backendAddressPools": "[parameters('backendPools')]",
+                        "backendHttpSettingsCollection": "[parameters('backendHttpSettingsCollection')]"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

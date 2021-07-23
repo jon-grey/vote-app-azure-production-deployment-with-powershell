@@ -1,0 +1,163 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "name": {
+      "type": "string",
+      // "pattern": "^[a-zA-Z0-9]{5,50}$", // << NOT SUPPORTED
+      "minLength": 5,
+      "maxLength": 50,
+      "metadata": {
+        "description": "Name of your Azure Container Registry"
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "resourceTags": {
+      "type": "object",
+      "defaultValue": {}
+    },
+    "acrAdminUserEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable admin user that have push / pull permission to the registry from inside Azure Portal."
+      }
+    },
+    "acrSku": {
+      "type": "string",
+      "metadata": {
+        "description": "Tier of your Azure Container Registry."
+      },
+      "defaultValue": "Basic",
+      "allowedValues": [ "Basic", "Standard", "Premium" ]
+    },
+    // ,
+    // "defaultValue": {
+    //   "/subscriptions/53cda94b-af20-45ab-82c0-04e260445517/resourcegroups/myResourceGroup-Internal/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myManagedIdentity-Internal": {
+    //     "principalId": "259c23fb-59bc-4719-a1c8-c49aa539475e",
+    //     "clientId": "0e01c3c8-9eac-4454-825c-1bc972e10438"
+    //   }
+    // }
+    "userAssignedIdentityId": {
+      "type": "string"
+    },
+    "keyVaultProperties": {
+      "type": "object"
+      // ,
+      // "defaultValue": {
+      //   "keyIdentifier": "https://mykeyvault-internal.vault.azure.net:443/keys/myKeyForEncryptionOfContainerRegistry-myContaineRregistryInternal",
+      //   "identity": "0e01c3c8-9eac-4454-825c-1bc972e10438"
+      // }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2020-11-01-preview",
+      "comments": "Container registry for storing docker images",
+      "location": "[parameters('location')]",
+      "name": "[parameters('name')]",
+      "tags": "[parameters('resourceTags')]",
+      "sku": {
+        "name": "[parameters('acrSku')]",
+        "tier": "[parameters('acrSku')]"
+      },
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[parameters('userAssignedIdentityId')]": {}
+        }
+      },
+      "properties": {
+        "adminUserEnabled": "[parameters('acrAdminUserEnabled')]",
+        "networkRuleSet": {
+          "defaultAction": "Allow",
+          "virtualNetworkRules": [],
+          "ipRules": []
+        },
+        "policies": {
+          "quarantinePolicy": {
+            "status": "disabled"
+          },
+          "trustPolicy": {
+            "type": "Notary",
+            "status": "disabled"
+          },
+          "retentionPolicy": {
+            "days": 7,
+            "status": "disabled"
+          }
+        },
+        "encryption": {
+          "status": "enabled",
+          "keyVaultProperties": "[parameters('keyVaultProperties')]"
+        },
+        "dataEndpointEnabled": false,
+        "publicNetworkAccess": "Enabled",
+        "networkRuleBypassOptions": "AzureServices",
+        "zoneRedundancy": "Disabled",
+        "anonymousPullEnabled": false
+      }
+    },
+  //   {
+  //     "type": "Microsoft.ContainerRegistry/registries/scopeMaps",
+  //     "apiVersion": "2020-11-01-preview",
+  //     "name": "[concat(parameters('name'), '/_repositories_admin')]",
+  //     "tags": "[parameters('resourceTags')]",
+  //     "dependsOn": [
+  //       "[resourceId('Microsoft.ContainerRegistry/registries', parameters('name'))]"
+  //     ],
+  //     "properties": {
+  //       "description": "Can perform all read, write and delete operations on the registry",
+  //       "actions": [
+  //         "repositories/*/metadata/read",
+  //         "repositories/*/metadata/write",
+  //         "repositories/*/content/read",
+  //         "repositories/*/content/write",
+  //         "repositories/*/content/delete"
+  //       ]
+  //     }
+  //   },
+  //   {
+  //     "type": "Microsoft.ContainerRegistry/registries/scopeMaps",
+  //     "apiVersion": "2020-11-01-preview",
+  //     "name": "[concat(parameters('name'), '/_repositories_pull')]",
+  //     "tags": "[parameters('resourceTags')]",
+  //     "dependsOn": [
+  //       "[resourceId('Microsoft.ContainerRegistry/registries', parameters('name'))]"
+  //     ],
+  //     "properties": {
+  //       "description": "Can pull any repository of the registry",
+  //       "actions": [ "repositories/*/content/read" ]
+  //     }
+  //   },
+  //   {
+  //     "type": "Microsoft.ContainerRegistry/registries/scopeMaps",
+  //     "apiVersion": "2020-11-01-preview",
+  //     "name": "[concat(parameters('name'), '/_repositories_push')]",
+  //     "tags": "[parameters('resourceTags')]",
+  //     "dependsOn": [
+  //       "[resourceId('Microsoft.ContainerRegistry/registries', parameters('name'))]"
+  //     ],
+  //     "properties": {
+  //       "description": "Can push to any repository of the registry",
+  //       "actions": [
+  //         "repositories/*/content/read",
+  //         "repositories/*/content/write"
+  //       ]
+  //     }
+  //   }
+  ],
+  "outputs": {
+    "acrLoginServer": {
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries',parameters('name')),'2019-12-01-preview').loginServer]",
+      "type": "string"
+    }
+  }
+}

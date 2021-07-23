@@ -1,0 +1,259 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appGwName": {
+      "type": "string"
+    },
+    "protocol": {
+      "type": "string",
+      "defaultValue": "Http"
+    },
+    "port": {
+      "type": "int",
+      "defaultValue": 80
+    },
+    "id": {
+      "type": "string",
+      "defaultValue": "Dummy"
+    },
+    "backendHttpSettingsSuffix": {
+      "type": "string",
+      "defaultValue": "Dummy",
+      "allowedValues" : [
+          "Customers", "DummyApp", "Dummy", ""
+      ]
+    }
+  },
+  "variables": {
+    "requestRoutingRuleName": "[concat('appGwRoutingRule', parameters('protocol'), parameters('port'), parameters('id'))]",
+    "httpListenerName": "[concat('appGwHttpListener', parameters('protocol'), parameters('port'), parameters('id'))]",
+    "backendPoolName": "[concat('appGwBackendPool', parameters('protocol'), parameters('port'), parameters('id'))]",
+    "backendHttpSettings": "[concat('appGwBackendHttpSettings', parameters('protocol'), parameters('port'), parameters('id'), parameters('backendHttpSettingsSuffix'))]"
+  },
+  "resources": [],
+  "outputs": {
+    "requestRoutingRule": {
+      "type": "object",
+      "value": {
+        "Name": "[variables('requestRoutingRuleName')]",
+        "properties": {
+          "RuleType": "Basic",
+          "httpListenerName": {
+            "id": "[resourceId('Microsoft.Network/applicationGateways/', parameters('appGwName'), 'httpListeners', variables('httpListenerName'))]"
+          },
+          "backendAddressPoolName": {
+            "id": "[resourceId('Microsoft.Network/applicationGateways/',parameters('appGwName'), 'backendAddressPools', variables('backendPoolName'))]"
+          },
+          "backendHttpSettingsName": {
+            "id": "[resourceId('Microsoft.Network/applicationGateways/',parameters('appGwName'), 'backendHttpSettingsCollection', variables('backendHttpSettings'))]"
+          }
+        }
+      }
+    }
+  }
+}
+
+/*
+{
+
+                "requestRoutingRules": [
+                    {
+                        "name": "appGwRoutingRuleCustomer21050001",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050001')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050001')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050002",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050002')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050002')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050003",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050003')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050003')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050004",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050004')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050004')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050005",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050005')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050005')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050006",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050006')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050006')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050007",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050007')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050007')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050008",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050008')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050008')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050009",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050009')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050009')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleCustomer21050010",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Customer21050010')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Customer21050010')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleDummyApp",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80DummyApp')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80DummyApp')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80DummyApp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRuleDummy",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80Dummy')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80Dummy')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80Dummy')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "appGwRoutingRule",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/httpListeners/appGwHttpListenerHttp80')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendAddressPools/appGwBackendPoolHttp80')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_myAppGw_492233_name')), '/backendHttpSettingsCollection/appGwBackendSettingsHttp80')]"
+                            }
+                        }
+                    }
+
+    ]
+}
+*/

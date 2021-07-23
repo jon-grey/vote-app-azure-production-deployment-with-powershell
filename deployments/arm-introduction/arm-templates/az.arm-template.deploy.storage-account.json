@@ -3,6 +3,8 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
       "storageAccountName": {
+        "minLength": 3,
+        "maxLength": 24,
         "type": "string",
         "metadata": {
           "description": "Specify the storage account name."
@@ -35,7 +37,7 @@
     "resources": [
       {
         "type": "Microsoft.Storage/storageAccounts",
-        "apiVersion": "2019-06-01",
+        "apiVersion": "2021-01-01",
         "name": "[parameters('storageAccountName')]",
         "location": "[parameters('location')]",
         "sku": {

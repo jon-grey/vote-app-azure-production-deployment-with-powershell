@@ -1,0 +1,366 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.1",
+  "parameters": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "defaultValue" : "[concat(parameters('access'), 'direction ', parameters('direction'), ' protocol ', parameters('protocol'), ' fromSource ', parameters('sourceAddressPrefix'),' port ', parameters('sourcePortRange'), ' toDestination ', parameters('destinationAddressPrefix'), ' port ', parameters('destinationPortRange'))]"
+    },
+    "protocol": {
+      "type": "string",
+      "defaultValue" : "TCP"
+    },
+    "sourcePortRange": {
+      "type": "string",
+      "defaultValue" : "*"
+    },
+    "destinationPortRange": {
+      "type": "string",
+      "defaultValue" : "*"
+    },
+    "sourceAddressPrefix": {
+      "type": "string",
+      "defaultValue" : "*"
+    },
+    "destinationAddressPrefix": {
+      "type": "string",
+      "defaultValue" : "*"
+    },
+    "access": {
+      "type": "string",
+      "defaultValue" : "Allow"
+    },
+    "priority": {
+      "type": "int",
+      "defaultValue" : 1000
+    },
+    "direction": {
+      "type": "string",
+      "defaultValue" : "Inbound"
+    }
+  },
+  "resources": [],
+  "outputs": {
+    "securityRule": {
+      "type": "object",
+      "value": {
+        "name": "[parameters('name')]",
+        "properties": {
+          "description":  "[parameters('description')]",
+          "protocol": "[parameters('protocol')]",
+          "sourcePortRange": "[parameters('sourcePortRange')]",
+          "destinationPortRange":  "[parameters('destinationPortRange')]",
+          "sourceAddressPrefix":  "[parameters('sourceAddressPrefix')]",
+          "destinationAddressPrefix":  "[parameters('destinationAddressPrefix')]",
+          "access":  "[parameters('access')]",
+          "priority":  "[parameters('priority')]",
+          "direction":  "[parameters('direction')]"
+        }
+      }
+    }
+  }
+}
+
+/*
+TODO secgroup: myNetSecGroup_ACI-492233
+
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "networkSecurityGroups_myNetSecGroup_ACI_492233_name": {
+            "defaultValue": "myNetSecGroup_ACI-492233",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_name')]",
+            "location": "eastus",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Rule100_Outbound_Allow_FromVnet_ToMySql",
+                        "properties": {
+                            "description": "Allow outbound access to MySQL on port 3306",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3306",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "Sql",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Rule110_Outbound_Deny_FromVnet_ToInternet",
+                        "properties": {
+                            "description": "Block outbound access to Internet",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "Internet",
+                            "access": "Deny",
+                            "priority": 110,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2020-11-01",
+            "name": "[concat(parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_name'), '/Rule100_Outbound_Allow_FromVnet_ToMySql')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_name'))]"
+            ],
+            "properties": {
+                "description": "Allow outbound access to MySQL on port 3306",
+                "protocol": "TCP",
+                "sourcePortRange": "*",
+                "destinationPortRange": "3306",
+                "sourceAddressPrefix": "VirtualNetwork",
+                "destinationAddressPrefix": "Sql",
+                "access": "Allow",
+                "priority": 100,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2020-11-01",
+            "name": "[concat(parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_name'), '/Rule110_Outbound_Deny_FromVnet_ToInternet')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_myNetSecGroup_ACI_492233_name'))]"
+            ],
+            "properties": {
+                "description": "Block outbound access to Internet",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "*",
+                "sourceAddressPrefix": "VirtualNetwork",
+                "destinationAddressPrefix": "Internet",
+                "access": "Deny",
+                "priority": 110,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        }
+    ]
+}
+*/
+
+/*
+TODO secgroup: myNetSecGroup_myAppGw-492233
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "networkSecurityGroups_myNetSecGroup_myAppGw_492233_name": {
+            "defaultValue": "myNetSecGroup_myAppGw-492233",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name')]",
+            "location": "eastus",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Rule100_Allow_TCP_FromInternet_ToVirtualNetwork",
+                        "properties": {
+                            "description": "Allow inbound from Internet to VirtualNetwork",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Rule1000_Allow_TCP_FromGatewayManager_ToAny",
+                        "properties": {
+                            "description": "Allow inbound access to GatewayManager",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "65200-65535",
+                            "sourceAddressPrefix": "GatewayManager",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Rule1010_Allow_AnyProto_FromAzureLoadBalancer_ToAny",
+                        "properties": {
+                            "description": "Allow inbound access to AzureLoadBalancer",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1010,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Rule1020_Allow_AnyProto_FromVirtualNetwork_ToAny",
+                        "properties": {
+                            "description": "Allow inbound access to VirtualNetwork",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1020,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2020-11-01",
+            "name": "[concat(parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name'), '/Rule100_Allow_TCP_FromInternet_ToVirtualNetwork')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name'))]"
+            ],
+            "properties": {
+                "description": "Allow inbound from Internet to VirtualNetwork",
+                "protocol": "TCP",
+                "sourcePortRange": "*",
+                "destinationPortRange": "80",
+                "sourceAddressPrefix": "Internet",
+                "destinationAddressPrefix": "VirtualNetwork",
+                "access": "Allow",
+                "priority": 100,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2020-11-01",
+            "name": "[concat(parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name'), '/Rule1000_Allow_TCP_FromGatewayManager_ToAny')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name'))]"
+            ],
+            "properties": {
+                "description": "Allow inbound access to GatewayManager",
+                "protocol": "TCP",
+                "sourcePortRange": "*",
+                "destinationPortRange": "65200-65535",
+                "sourceAddressPrefix": "GatewayManager",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 1000,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2020-11-01",
+            "name": "[concat(parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name'), '/Rule1010_Allow_AnyProto_FromAzureLoadBalancer_ToAny')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name'))]"
+            ],
+            "properties": {
+                "description": "Allow inbound access to AzureLoadBalancer",
+                "protocol": "TCP",
+                "sourcePortRange": "*",
+                "destinationPortRange": "*",
+                "sourceAddressPrefix": "AzureLoadBalancer",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 1010,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2020-11-01",
+            "name": "[concat(parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name'), '/Rule1020_Allow_AnyProto_FromVirtualNetwork_ToAny')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_myNetSecGroup_myAppGw_492233_name'))]"
+            ],
+            "properties": {
+                "description": "Allow inbound access to VirtualNetwork",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "*",
+                "sourceAddressPrefix": "VirtualNetwork",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 1020,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        }
+    ]
+}
+*/

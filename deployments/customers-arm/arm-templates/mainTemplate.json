@@ -1,0 +1,289 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "customersCount": {
+      "type": "int",
+      "defaultValue": 10
+    },
+    "projectName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 11,
+      "metadata": {
+        "description": "Specify a project name that is used to generate resource names."
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify a location for the resources."
+      },
+      "defaultValue": "eastus",
+      "allowedValues": [
+        "southcentralus",
+        "westus",
+        "centralus",
+        "eastus",
+        "northcentralus",
+        "westcentralus"
+      ]
+    },
+    "currentUserServicePrincipalClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "<currentUserServicePrincipalClientId>"
+      }
+    },
+    "dnsZoneName": {
+      "type": "string"
+    },
+    "resourceTags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "Dev",
+        "Project": "[parameters('projectName')]"
+      }
+    }
+  },
+  "variables": {
+    // storageAcc - 10
+    // uniqueString(resourceGroup().id) - len == 13
+    "uniqueString": "[uniqueString(resourceGroup().id)]",
+    "someNumber": 21050000,
+
+    "storageAccountName": "[toLower(concat('storageAcc', variables('uniqueString')))]",
+    "containerRegistryName": "[concat('containerReg',parameters('projectName'), variables('uniqueString'))]",
+    "keyForContainerRegistryEncryptionName": "[concat('key-', variables('containerRegistryName'))]",
+    "managedIdentityName": "[concat('managedIdentity-', parameters('projectName'))]",
+    "keyVaultName": "[concat('keyVault-', parameters('projectName'))]",
+    "appGwName": "[concat('myAppGw-', parameters('projectName'))]",
+    "vnetName": "[concat('myVnet-', parameters('projectName'))]",
+    "subnetNameForAppGw": "subnetAAG",
+    "publicIPAddressNameForAppGw": "[concat('myPublicIp_', variables('appGwName'))]"
+  },
+  "outputs": {
+    "deploymentAppGw": {
+      "type": "object",
+      "value": "[reference('deploymentAppGw').outputs]"
+    }
+  },
+  "resources": [
+    {
+      "name": "deploymentAppGw",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "tags": "[parameters('resourceTags')]",
+      "dependsOn": [
+        // "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVault')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.02B.deploy.application-gateway.json"
+        },
+        "parameters": {
+          "appGwName": {
+            "value": "[variables('appGwName')]"
+          },
+          "dnsZoneName": {
+            "value": "[parameters('dnsZoneName')]"
+          },
+          "vnetName": {
+            "value": "[variables('vnetName')]"
+          },
+          "subnetName": {
+            "value": "[variables('subnetNameForAppGw')]"
+          },
+          "publicIPAddressName": {
+            "value": "[variables('publicIPAddressNameForAppGw')]"
+          }
+          // "objectId": {
+          //   "value": "[reference('deploymentManagedIdentity').outputs.principalId.value]"
+          // }
+        }
+      }
+    }
+
+    // {
+    //   "name": "deploymentEntryVnetSubnet",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "dependsOn": [
+    //     "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVault')]"
+    //   ],
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": "az.02B.deploy.virtual-network.subnet.entry.json"
+    //     },
+    //     "parameters": {
+    //       "objectId": {
+    //         "value": "[reference('deploymentManagedIdentity').outputs.principalId.value]"
+    //       }
+    //     }
+    //   }
+    // },
+    // {
+    //   "name": "deploymentEntrySecGrForSubnetSecRule",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "dependsOn": [
+    //     "[resourceId('Microsoft.Resources/deployments', 'deploymentKeyVault')]"
+    //   ],
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": "az.03B.deploy.security-group.for-subnet.security-rule.entry.json"
+    //     },
+    //     "parameters": {
+    //       "objectId": {
+    //         "value": "[reference('deploymentManagedIdentity').outputs.principalId.value]"
+    //       }
+    //     }
+    //   }
+    // },
+    // {
+    //   "name": "deploymentPublicIpAddress",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": "az.01B.deploy.public-ip-address.json"
+    //     },
+    //     "parameters": {
+    //       "storageAccountName": {
+    //         "value": "[variables('storageAccountName')]"
+    //       },
+    //       "location": {
+    //         "value": "[parameters('location')]"
+    //       }
+    //     }
+    //   }
+    // },
+    // {
+    //   "name": "deployment",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": ""
+    //     },
+    //     "parameters": {
+    //       "storageAccountName": {
+    //         "value": "[variables('storageAccountName')]"
+    //       },
+    //       "location": {
+    //         "value": "[parameters('location')]"
+    //       }
+    //     }
+    //   }
+    // },
+    // {
+    //   "name": "deployment",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": ""
+    //     },
+    //     "parameters": {
+    //       "storageAccountName": {
+    //         "value": "[variables('storageAccountName')]"
+    //       },
+    //       "location": {
+    //         "value": "[parameters('location')]"
+    //       }
+    //     }
+    //   }
+    // },
+    // {
+    //   "name": "deployment",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": ""
+    //     },
+    //     "parameters": {
+    //       "storageAccountName": {
+    //         "value": "[variables('storageAccountName')]"
+    //       },
+    //       "location": {
+    //         "value": "[parameters('location')]"
+    //       }
+    //     }
+    //   }
+    // },
+    // {
+    //   "name": "deployment",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": ""
+    //     },
+    //     "parameters": {
+    //       "storageAccountName": {
+    //         "value": "[variables('storageAccountName')]"
+    //       },
+    //       "location": {
+    //         "value": "[parameters('location')]"
+    //       }
+    //     }
+    //   }
+    // },
+    // {
+    //   "name": "deployment",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": ""
+    //     },
+    //     "parameters": {
+    //       "storageAccountName": {
+    //         "value": "[variables('storageAccountName')]"
+    //       },
+    //       "location": {
+    //         "value": "[parameters('location')]"
+    //       }
+    //     }
+    //   }
+    // },
+    // {
+    //   "name": "deployment",
+    //   "type": "Microsoft.Resources/deployments",
+    //   "apiVersion": "2020-10-01",
+    //   "tags": "[parameters('resourceTags')]",
+    //   "properties": {
+    //     "mode": "Incremental",
+    //     "templateLink": {
+    //       "relativePath": ""
+    //     },
+    //     "parameters": {
+    //       "storageAccountName": {
+    //         "value": "[variables('storageAccountName')]"
+    //       },
+    //       "location": {
+    //         "value": "[parameters('location')]"
+    //       }
+    //     }
+    //   }
+    // }
+  ]
+}

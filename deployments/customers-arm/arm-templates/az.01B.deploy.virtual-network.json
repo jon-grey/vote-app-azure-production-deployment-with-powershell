@@ -1,0 +1,102 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vnetName": {
+            "type": "string"
+        },
+        "vnetAddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "description": "Address Prefix"
+            }
+        },
+        "subnets": {
+            "type": "array",
+            "defaultValue" : [],
+            "metadata": {
+                "description": "Array of subnet entries in form: [{\"name\": \"[variables('SubnetName')]\", \"properties\": {\"addressPrefix\": \"[variables('SubnetPrefix')]\"}}]"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        }
+    },
+    "resources": [
+        {
+            "apiVersion": "2020-05-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('vnetName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('vnetAddressPrefix')]"
+                    ]
+                },
+                "subnets": "[parameters('subnets')]"
+            }
+        }
+    ],
+    "outputs": {
+        "virtualNetworkResourceGroupName": {
+            "type": "string",
+            "value": "[resourceGroup().name]"
+        },
+        "vnetName": {
+            "type": "string",
+            "value": "[parameters('vnetName')]"
+        }
+    }
+}
+
+/*
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualNetworks_myVNet_492233_name": {
+            "defaultValue": "myVNet-492233",
+            "type": "String"
+        },
+        "networkSecurityGroups_myNetSecGroup_myAppGw_492233_externalid": {
+            "defaultValue": "/subscriptions/53cda94b-af20-45ab-82c0-04e260445517/resourceGroups/myResourceGroup-492233/providers/Microsoft.Network/networkSecurityGroups/myNetSecGroup_myAppGw-492233",
+            "type": "String"
+        },
+        "networkSecurityGroups_myNetSecGroup_ACI_492233_externalid": {
+            "defaultValue": "/subscriptions/53cda94b-af20-45ab-82c0-04e260445517/resourceGroups/myResourceGroup-492233/providers/Microsoft.Network/networkSecurityGroups/myNetSecGroup_ACI-492233",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('virtualNetworks_myVNet_492233_name')]",
+            "location": "eastus",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "dhcpOptions": {
+                    "dnsServers": []
+                },
+                "subnets": [
+
+                ],
+                "virtualNetworkPeerings": [],
+                "enableDdosProtection": false
+            }
+        },
+
+    ]
+}
+*/

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 11,
+      "metadata": {
+        "description": "Specify a project name that is used to generate resource names."
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify a location for the resources."
+      },
+      "defaultValue": "eastus",
+      "allowedValues":  [
+        "southcentralus",
+        "westus",
+        "centralus",
+        "eastus",
+        "northcentralus",
+        "westcentralus"
+      ]
+    },
+    "linuxFxVersion": {
+      "type": "string",
+      "defaultValue": "php|7.0",
+      "metadata": {
+        "description": "The Runtime stack of current web app"
+      }
+    },
+    "resourceTags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "Dev",
+        "Project": "[parameters('projectName')]"
+      }
+    }
+  },
+  "variables": {
+    // storageAcc - 10
+    // uniqueString(resourceGroup().id) - len == 13
+    "storageAccountName": "[toLower(concat('storageAcc', uniqueString(resourceGroup().id)))]",
+    "webAppName": "[concat('webApp-', parameters('projectName'))]",
+    "appServicePlanName": "[concat('servicePlan-', parameters('projectName'))]"
+  },
+  "resources": [
+    {
+      "name": "deploymentStorageAccount",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.arm-template.deploy.storage-account.json"
+        },
+        "parameters": {
+          "storageAccountName": {
+            "value": "[variables('storageAccountName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "deploymentAppServicePlan",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentStorageAccount')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.arm-template.deploy.app.service-plan.json"
+        },
+        "parameters": {
+          "appServicePlanName": {
+            "value": "[variables('appServicePlanName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "deploymentWebApp",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentStorageAccount')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploymentAppServicePlan')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "az.arm-template.deploy.app.web-app.json"
+        },
+        "parameters": {
+          "webAppName": {
+            "value": "[variables('webAppName')]"
+          },
+          "appServicePlanId": {
+            "value": "[reference('deploymentAppServicePlan').outputs.resourceID.value]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "linuxFxVersion": {
+            "value": "[parameters('linuxFxVersion')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "storageEndpoint": {
+      "type": "object",
+      "value": "[reference('deploymentStorageAccount').outputs.storageEndpoint.value]"
+    }
+  }
+}

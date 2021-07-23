@@ -3,10 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "projectName": {
-            "value": "my-arm-project"
+            "value": "proj210501"
         },
         "location": {
-            "value": "eastus"
+            "value": "eastus" 
         },
         "linuxFxVersion": {
             "value": "php|7.0"

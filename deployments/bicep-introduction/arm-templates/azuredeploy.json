@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.3.255.40792",
+      "templateHash": "1565529348325494714"
+    }
+  },
+  "parameters": {
+    "customersCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 0,
+      "maxValue": 97,
+      "metadata": {
+        "description": "Customers routing rules, listeners, backend pools to preallocate."
+      }
+    },
+    "lastCustomerId": {
+      "type": "int",
+      "defaultValue": 2120,
+      "metadata": {
+        "description": "Next customers ID prefix string."
+      }
+    }
+  },
+  "functions": [],
+  "variables": {
+    "copy": [
+      {
+        "name": "m_backendPoolsCustomers",
+        "count": "[length(range(0, 10))]",
+        "input": {
+          "name": "[format('my-rg-{0}', range(0, 10)[copyIndex('m_backendPoolsCustomers')])]"
+        }
+      },
+      {
+        "name": "customers",
+        "count": "[length(range(0, parameters('customersCount')))]",
+        "input": {
+          "id": "[format('{0:D9}', add(parameters('lastCustomerId'), range(0, parameters('customersCount'))[copyIndex('customers')]))]"
+        }
+      }
+    ],
+    "locationShortName": "weu",
+    "locationLongName": "westeurope"
+  },
+  "resources": [],
+  "outputs": {
+    "nsgs": {
+      "type": "array",
+      "value": "[variables('m_backendPoolsCustomers')]"
+    },
+    "hello": {
+      "type": "string",
+      "value": "Hello World!"
+    },
+    "myResourceGroup": {
+      "type": "object",
+      "value": "[resourceGroup()]"
+    },
+    "customersPrefix": {
+      "type": "array",
+      "value": "[variables('customers')]"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "containerName": {
+            "type": "string",
+            "defaultValue": "aci-container-dummy-000",
+            "metadata": {
+                "description": "Container name"
+            }
+        },
+        "image": {
+            "defaultValue": "mcr.microsoft.com/azuredocs/aks-helloworld:v1",
+            "type": "String"
+        },
+        "port": {
+            "type": "string",
+            "metadata": {
+                "description": "Port to open on the container."
+            },
+            "defaultValue": "80"
+        },
+        "cpuCores": {
+            "type": "string",
+            "metadata": {
+                "description": "The number of CPU cores to allocate to the container. Must be an integer."
+            },
+            "defaultValue": "1.0"
+        },
+        "memoryInGb": {
+            "type": "string",
+            "metadata": {
+                "description": "The amount of memory to allocate to the container in gigabytes."
+            },
+            "defaultValue": "1.5"
+        },
+        "environmentVariables": {
+            "defaultValue": [],
+            "type": "array"
+        }
+    },
+
+    "variables": {
+    },
+    "resources": [
+    ],
+    "outputs": {
+        "container": {
+            "type": "object",
+            "value": {
+                "name": "[parameters('containerName')]",
+                "properties": {
+                    "image": "[parameters('image')]",
+                    "ports": [
+                        {
+                            "protocol": "TCP",
+                            "port": "[parameters('port')]"
+                        }
+                    ],
+                    "environmentVariables": "[parameters('environmentVariables')]",
+                    "resources": {
+                        "requests": {
+                            "memoryInGB": "[parameters('memoryInGb')]",
+                            "cpu": "[parameters('cpuCores')]"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -13,7 +13,6 @@ echo '
 # Create App Gw IP Config associated to Vnet Subnet
 # ===============================================================================
 '
-
 $VNet = Get-AzVirtualNetwork `
   -Name ${VNET_NAME} `
   -ResourceGroupName ${ARG_NAME}
@@ -35,7 +34,6 @@ echo '
 # Front-end ports	100
 # ===============================================================================
 '
-
 $PublicIp = Get-AzPublicIpAddress `
   -ResourceGroupName ${ARG_NAME} `
   -Name ${PUB_IP_NAME} 
@@ -80,7 +78,6 @@ If a default configuration inside a routing rule is set to route traffic
 (for example, it has a listener, a backend pool, and HTTP settings) 
 then that also counts as a listener.
 "
-
 $Listeners = @()
 
 $BasicListener = New-AzApplicationGatewayHttpListener `
@@ -133,8 +130,9 @@ echo '
 # ===============================================================================
 # Create App Gw Backend
 # Back-end address pools,	100
-# ==============================================================================='
-
+# ===============================================================================
+[Set-AzApplicationGatewayBackendAddressPool (Az.Network)](https://docs.microsoft.com/en-us/powershell/module/az.network/set-azapplicationgatewaybackendaddresspool?view=azps-5.7.0)
+'
 $BackendPools = @()
 
 
@@ -215,7 +213,6 @@ echo '
 # Create App Gw Routing Rule for specific customer subdomain
 # require: Listener, BackendPool, BackendSettings
 # ==============================================================================='
-
 $Rules = @()
 
 $BasicRule = New-AzApplicationGatewayRequestRoutingRule `
@@ -267,7 +264,10 @@ $Rules += $BasicRule
 echo '
 # ===============================================================================
 # Create App Gw Autoscaling Config
-# ==============================================================================='
+# ===============================================================================
+[New-AzApplicationGatewayAutoscaleConfiguration (Az.Network)](https://docs.microsoft.com/en-us/powershell/module/az.network/new-azapplicationgatewayautoscaleconfiguration?view=azps-5.7.0)
+'
+
 $AutoscaleConfig = New-AzApplicationGatewayAutoscaleConfiguration -MinCapacity 0 -MaxCapacity 3
 
 echo '
@@ -288,9 +288,9 @@ echo '
 # ===============================================================================
 # Create App Gw Sku
 # NOTE: do not specify capacity when using autoscaling
-# ==============================================================================='
-
-
+# ===============================================================================
+# [New-AzApplicationGatewaySku (Az.Network)](https://docs.microsoft.com/en-us/powershell/module/az.network/new-azapplicationgatewaysku?view=azps-5.7.0)
+'
 $Sku = New-AzApplicationGatewaySku -Name $APP_GW_SKU_NAME -Tier $APP_GW_SKU_TIER # -Capacity 1
 
 echo '
